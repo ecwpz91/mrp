@@ -4,20 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Camera {
 
-	private long id;
+	private String id;
 	private String name;
-
-	@JsonProperty("rover_id")
-	private int roverId;
 
 	@JsonProperty("full_name")
 	private String fullName;
 
-	public long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 
@@ -27,14 +24,6 @@ public class Camera {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public long getRoverId() {
-		return roverId;
-	}
-
-	public void setRoverId(int roverId) {
-		this.roverId = roverId;
 	}
 
 	public String getFullName() {
@@ -47,7 +36,7 @@ public class Camera {
 
 	@Override
 	public String toString() {
-		return "{id=" + id + ",name=" + name + ",roverId=" + roverId + ",fullName=" + fullName + "}";
+		return "{id=" + id + ",name=" + name + ",fullName=" + fullName + "}";
 	}
 
 }

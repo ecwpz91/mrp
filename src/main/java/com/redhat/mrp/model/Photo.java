@@ -2,22 +2,16 @@ package com.redhat.mrp.model;
 
 import java.net.URL;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class Photo {
 
 	private long id;
 	private long sol;
-
 	private Camera camera;
-
-	@JsonProperty("img_src")
 	private URL imgSrc;
-
-	@JsonProperty("earth_date")
 	private String earthDate;
-
 	private Rover rover;
+	private String title;
+	private String caption;
 
 	public long getId() {
 		return id;
@@ -65,6 +59,22 @@ public class Photo {
 
 	public void setRover(Rover rover) {
 		this.rover = rover;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getCaption() {
+		return caption;
+	}
+
+	public void setCaption(String caption) {
+		this.caption = caption;
 	}
 
 	@Override

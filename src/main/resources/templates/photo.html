@@ -59,6 +59,7 @@
               <th>Sol</th>
               <th>Camera</th>
               <th>Rover</th>
+              <th>Title / Caption</th>
               <th>Orbital context</th>
             </tr>
           </thead>
@@ -78,6 +79,10 @@
               </td>
               <td>
                 <span th:if="${photo.rover != null}" th:text="${photo.rover.name}"></span>
+              </td>
+              <td style="max-width: 280px; text-align: left; padding: 0.5rem;">
+                <div th:if="${photo.title != null}" th:text="${photo.title}" style="font-weight: bold;"></div>
+                <div th:if="${photo.caption != null}" th:text="${photo.caption}" style="font-size: 0.9rem;"></div>
               </td>
               <td th:if="${trek != null}">
                 <div id="trek-map"

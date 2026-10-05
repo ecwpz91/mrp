@@ -10,7 +10,7 @@ Spring Boot image browser for NASA Mars rover photos. Volunteers and researchers
 
 ## Configure the Mars Vista API key
 
-NASA’s Mars Rover Photos API was retired. This app uses the [Mars Vista](https://marsvista.dev/docs/v1) v1 API as a drop-in replacement.
+NASA’s Mars Rover Photos API was retired. This app uses the [Mars Vista v2 API](https://marsvista.dev/docs/reference/photos).
 
 Do not commit a real API key. Set it via environment variable (preferred):
 
@@ -48,7 +48,7 @@ Useful paths:
 | Path | Description |
 |------|-------------|
 | `/` | Landing page |
-| `/rovers` | List all rovers from the Mars Vista API |
+| `/rovers` | List all rovers from Mars Vista v2 (with cameras) |
 | `/rover/{name}` | Rover detail (e.g. `/rover/curiosity`) |
 | `/photo/{name}?landingDate=YYYY-MM-DD&maxDate=YYYY-MM-DD` | Picks a random hazcam photo, then redirects to a stable URL |
 | `/photo/{name}?earthDate=YYYY-MM-DD&photoId=…&camera=…` | Same photo on refresh (use Rovers → Random Photo for a new one) |
@@ -82,8 +82,9 @@ Note: the image bakes in `application.properties`. Prefer passing `MARSVISTA_API
 ```
 src/main/java/com/redhat/mrp/
   RoverClientApplication.java   # Spring Boot entry + RestTemplate bean
+  client/                        # Mars Vista v2 HTTP client + mapping
   controller/                    # MVC endpoints
-  model/                         # Mars Vista API JSON bindings
+  model/                         # View models (rovers, photos, Trek context)
 src/main/resources/
   templates/                     # Thymeleaf views
   static/                        # HTML, CSS (Shards UI), images

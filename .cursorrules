@@ -11,7 +11,7 @@ Key context for features, copy, and documentation in this repository:
 ## Tech Stack & Architecture
 - **Framework**: Java with Spring Boot (MVC architecture)
 - **Frontend**: Thymeleaf templates (`src/main/resources/templates`), HTML, and CSS (Shards UI)
-- **External Integration**: Mars Vista Mars Rover Photos API (`api.marsvista.dev`; requires `api.key` / `MARSVISTA_API_KEY` and `X-API-Key` header)
+- **External Integration**: Mars Vista API v2 (`api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` and `X-API-Key` header)
 - **Deployment & DevOps**: Kubernetes, OpenShift, Docker, and Jenkins CI/CD
 
 ## Coding & Architectural Conventions

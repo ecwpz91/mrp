@@ -79,7 +79,7 @@
 							</table>
 						</td>
 						<!-- <td><a th:href="@{/rover/{name}(name=${#strings.toLowerCase(rover.name)})}">View</a></td> -->
-						<td><a th:href="@{/photo/{name}(name=${#strings.toLowerCase(rover.name)},landingDate=${rover.landingDate},maxDate=${rover.maxDate})}">Random Photo</a></td>
+						<td><a th:href="@{/photo/{name}(name=${rover.id},landingDate=${rover.landingDate},maxDate=${rover.maxDate})}">Random Photo</a></td>
 					</tr>
 				</tbody>
 			</table>
