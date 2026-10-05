@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.mrp.model.LandingSiteContext;
 import com.redhat.mrp.model.Photo;
 import com.redhat.mrp.model.PhotoList;
 import com.redhat.mrp.model.Rover;
@@ -88,15 +89,49 @@ public class RoverController {
 		return "rover";
 	}
 
+	/**
+	 * Random selection (landingDate + maxDate) redirects once to a stable URL
+	 * (earthDate + photoId + camera) so refresh keeps the same photo. Pick a new
+	 * image from /rovers.
+	 */
 	@GetMapping("/photo/{name}")
-	public String getRandomPhoto(ModelMap model, @PathVariable String name, @RequestParam(value = "landingDate", required = false) String landingDate, @RequestParam(value = "maxDate", required = false) String maxDate) {
+	public String getPhoto(ModelMap model, @PathVariable String name,
+			@RequestParam(value = "landingDate", required = false) String landingDate,
+			@RequestParam(value = "maxDate", required = false) String maxDate,
+			@RequestParam(value = "earthDate", required = false) String earthDate,
+			@RequestParam(value = "photoId", required = false) Long photoId,
+			@RequestParam(value = "camera", required = false) String camera) {
+
+		if (photoId != null && earthDate != null && !earthDate.isBlank()) {
+			String cam = (camera != null && !camera.isBlank()) ? camera : frontHazcamFor(name);
+			Photo photo = findPhotoById(earthDate, name, cam, photoId);
+			if (photo == null) {
+				throw new IllegalArgumentException(
+						"Photo " + photoId + " was not found for " + name + " on " + earthDate + ".");
+			}
+			model.put("photo", photo);
+			model.put("trek", LandingSiteContext.forRover(name));
+			return "photo";
+		}
+
+		if (landingDate == null || maxDate == null) {
+			throw new IllegalArgumentException(
+					"Choose a random photo from the Rovers page, or open a photo link that includes earthDate and photoId.");
+		}
+
+		Photo randomPhoto = pickRandomPhoto(name, landingDate, maxDate);
+		String cam = frontHazcamFor(name);
+		return "redirect:/photo/" + name + "?earthDate=" + randomPhoto.getEarthDate() + "&photoId="
+				+ randomPhoto.getId() + "&camera=" + cam;
+	}
+
+	private Photo pickRandomPhoto(String name, String landingDate, String maxDate) {
 		DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
 		LocalDate from = LocalDate.parse(landingDate, formatter);
 		LocalDate to = LocalDate.parse(maxDate, formatter);
 		long days = from.until(to, ChronoUnit.DAYS);
 		String camera = frontHazcamFor(name);
 
-		Photo randomPhoto = null;
 		LocalDate lastAttempt = null;
 		for (int attempt = 0; attempt < MAX_PHOTO_ATTEMPTS; attempt++) {
 			long randomDays = ThreadLocalRandom.current().nextLong(days + 1);
@@ -107,20 +142,28 @@ public class RoverController {
 				continue;
 			}
 			Photo[] photos = photosForDate.getPhotos();
-			randomPhoto = photos[RANDOM.nextInt(photos.length)];
+			Photo randomPhoto = photos[RANDOM.nextInt(photos.length)];
 			LOGGER.debug("Random photo picked :: {}", randomPhoto);
-			break;
+			return randomPhoto;
 		}
 
-		if (randomPhoto == null) {
-			throw new IllegalArgumentException(
-					"No photos available after " + MAX_PHOTO_ATTEMPTS + " attempts"
-							+ (lastAttempt != null ? " (last date " + lastAttempt + ")" : "")
-							+ ". You may want to try other dates.");
-		}
+		throw new IllegalArgumentException(
+				"No photos available after " + MAX_PHOTO_ATTEMPTS + " attempts"
+						+ (lastAttempt != null ? " (last date " + lastAttempt + ")" : "")
+						+ ". You may want to try other dates.");
+	}
 
-		model.put("photo", randomPhoto);
-		return "photo";
+	private Photo findPhotoById(String earthDate, String name, String camera, long photoId) {
+		PhotoList photosForDate = getAllPhotos(earthDate, name, camera);
+		if (photosForDate == null || photosForDate.getPhotos() == null) {
+			return null;
+		}
+		for (Photo photo : photosForDate.getPhotos()) {
+			if (photo.getId() == photoId) {
+				return photo;
+			}
+		}
+		return null;
 	}
 
 	public PhotoList getAllPhotos(String date, String name, String camera) {

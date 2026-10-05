@@ -50,7 +50,10 @@ Useful paths:
 | `/` | Landing page |
 | `/rovers` | List all rovers from the Mars Vista API |
 | `/rover/{name}` | Rover detail (e.g. `/rover/curiosity`) |
-| `/photo/{name}?landingDate=YYYY-MM-DD&maxDate=YYYY-MM-DD` | Random FHAZ photo in that date range |
+| `/photo/{name}?landingDate=YYYY-MM-DD&maxDate=YYYY-MM-DD` | Picks a random hazcam photo, then redirects to a stable URL |
+| `/photo/{name}?earthDate=YYYY-MM-DD&photoId=…&camera=…` | Same photo on refresh (use Rovers → Random Photo for a new one) |
+
+The photo page shows the Mars Vista hazcam image alongside a [Mars Trek](https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars) landing-site mosaic (HiRISE for Curiosity/Spirit/Opportunity; global Viking centered on Jezero for Perseverance). Trek tiles load from `trek.nasa.gov` in the browser—no NASA API key. The map is mission landing-area context labeled with the photo’s earth date/sol, not the rover’s exact position that day.
 
 ### Build and run the JAR
 
