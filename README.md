@@ -104,11 +104,126 @@ Stack: Java 17+, Quarkus 3.40 LTS (REST, Qute, REST Client, SmallRye Health, Mic
 
 ## Deploy
 
-- **Kubernetes**: apply manifests under `k8s/`
-- **OpenShift**: see `openshift/` (build config, pipeline, ConfigMap). Put the API key in the ConfigMap or a Secret—not in git.
-- **CI**: `Jenkinsfile` drives an OpenShift binary build
+### Kubernetes
 
-Update deploy manifests to run `target/quarkus-app/quarkus-run.jar` (or a Quarkus container image) instead of the old Spring Boot fat JAR name if they still reference `mrp-0.0.1.jar`.
+```bash
+kubectl apply -f k8s/
+```
+
+Ensure the runtime has a Mars Vista API key (for example via `MARSVISTA_API_KEY` in the Deployment). Do not commit a real key.
+
+### OpenShift (step by step)
+
+Prerequisites: [`oc`](https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html) logged into a cluster (`oc login …`), and this repo cloned locally.
+
+The published image is `quay.io/ecwpz91/mrp:latest`. Runtime manifests live under `k8s/`; OpenShift helpers (registry secrets, ConfigMap, BuildConfigs) live under `openshift/`.
+
+#### 1. Create the project
+
+```bash
+# from the repo root
+oc new-project mrp
+# or, if the project already exists:
+# oc project mrp
+```
+
+#### 2. Registry pull secret (Quay)
+
+If the Quay repository is private, create a pull secret so the project can pull `quay.io/ecwpz91/mrp`.
+
+**Option A — interactive (recommended):**
+
+```bash
+oc create secret docker-registry quayio-reg \
+  --docker-server=quay.io \
+  --docker-username=<quay-username> \
+  --docker-password=<quay-password-or-robot-token> \
+  --docker-email=<email>
+```
+
+**Option B — apply the placeholder secret:** edit `openshift/quayioreg.yaml` and replace `encrypted-password-here` with a base64-encoded Docker config JSON, then:
+
+```bash
+oc apply -f openshift/quayioreg.yaml
+```
+
+Link the secret to the default service account so Deployments can pull the image:
+
+```bash
+oc secrets link default quayio-reg --for=pull
+```
+
+(`openshift/dockerhub.yaml` is optional and only needed if a build or base image pull requires Docker Hub credentials.)
+
+#### 3. Import the Quay image into the project
+
+This creates an ImageStream in the project and pulls/tags the remote image:
+
+```bash
+oc import-image mrp:latest \
+  --from=quay.io/ecwpz91/mrp:latest \
+  --confirm
+```
+
+Verify:
+
+```bash
+oc get imagestream mrp
+oc describe imagestream mrp
+```
+
+#### 4. Apply app configuration (API key)
+
+Edit `openshift/configmap.yaml` and set a real `api.key` (do not commit it), then:
+
+```bash
+oc apply -f openshift/configmap.yaml
+```
+
+Mount or inject that ConfigMap (or set `MARSVISTA_API_KEY`) on the Deployment before relying on live API calls. Prefer a Secret for production.
+
+#### 5. Deploy the app (`oc apply`)
+
+```bash
+oc apply -f k8s/deployment.yaml
+oc apply -f k8s/service.yaml
+oc apply -f k8s/route.yaml
+```
+
+Or apply the whole directory:
+
+```bash
+oc apply -f k8s/
+```
+
+`k8s/deployment.yaml` references `quay.io/ecwpz91/mrp:latest` directly. After pods are running:
+
+```bash
+oc get pods,svc,route
+oc get route mars-rover-photos -o jsonpath='{.spec.host}{"\n"}'
+```
+
+Open `https://<route-host>/` in a browser.
+
+#### 6. Optional: in-cluster image builds
+
+To build from this repo’s `Dockerfile` and push to Quay (requires Quay push credentials on the builder service account):
+
+```bash
+oc apply -f openshift/buildcfg.yaml
+oc secrets link builder quayio-reg --for=pull,mount
+oc start-build mars-rover-photos --from-dir=. --follow
+```
+
+To wire the Jenkins pipeline BuildConfig (cluster must have OpenShift Pipelines / Jenkins integration as expected by `Jenkinsfile`):
+
+```bash
+oc apply -f openshift/pipeline.yaml
+```
+
+### CI
+
+`Jenkinsfile` drives an OpenShift binary build against BuildConfig `mars-rover-photos` (see `openshift/buildcfg.yaml` and `openshift/pipeline.yaml`).
 
 ## License
 
