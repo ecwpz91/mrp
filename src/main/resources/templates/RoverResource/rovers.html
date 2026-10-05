@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<title>Mars Rover Photos</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+		integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+		integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/shards.min.css">
+</head>
+<body>
+	<table style="background-color: gray;">
+		<tr style="width: 100%">
+			<td style="width: 1%">
+				<img alt="nasa logo" src="/images/logo.png" height="150px;">
+			</td>
+			<td style="width: 55%" align="left">
+				<h2>Welcome to Mars Rover Photos, an Image Management Tool</h2>
+			</td>
+		</tr>
+	</table>
+
+	<div align="center" style="min-height: 400px;">
+		{#if !rovers || rovers.size == 0}
+		<h2>No Rover yet!</h2>
+		{#else}
+		<h2>Listed Rovers with MRP</h2><br />
+		<table border="1">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Landing Date</th>
+					<th>Launch Date</th>
+					<th>Status</th>
+					<th>Max Martian Sol</th>
+					<th>Max Date</th>
+					<th>Total Photos</th>
+					<th>Camera IDs</th>
+					<th>Camera Names</th>
+					<th>Camera Full Names</th>
+					<th>View</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#for rover in rovers}
+				<tr>
+					<td>{rover.id}</td>
+					<td>{rover.name}</td>
+					<td>{rover.landingDate}</td>
+					<td>{rover.launchDate}</td>
+					<td>{rover.status}</td>
+					<td>{rover.maxSol}</td>
+					<td>{rover.maxDate}</td>
+					<td>{rover.totalPhotos}</td>
+					<td>
+						<table>
+							{#if rover.cameras}
+							{#for camera in rover.cameras}
+							<tr><td>{camera.id}</td></tr>
+							{/for}
+							{/if}
+						</table>
+					</td>
+					<td>
+						<table>
+							{#if rover.cameras}
+							{#for camera in rover.cameras}
+							<tr><td>{camera.name}</td></tr>
+							{/for}
+							{/if}
+						</table>
+					</td>
+					<td>
+						<table>
+							{#if rover.cameras}
+							{#for camera in rover.cameras}
+							<tr><td>{camera.fullName}</td></tr>
+							{/for}
+							{/if}
+						</table>
+					</td>
+					<td>
+						<a href="/photo/{rover.id}?landingDate={rover.landingDate}&maxDate={rover.maxDate}">Random Photo</a>
+					</td>
+				</tr>
+				{/for}
+			</tbody>
+		</table>
+		{/if}
+	</div>
+</body>
+</html>

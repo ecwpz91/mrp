@@ -6,47 +6,32 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.mrp.model.Camera;
 import com.redhat.mrp.model.Photo;
 import com.redhat.mrp.model.Rover;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 /**
  * Mars Vista API v2 client. Maps JSON:API-style payloads into view models.
  */
-@Component
+@ApplicationScoped
 public class MarsVistaClient {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MarsVistaClient.class);
-	private static final String API_BASE = "https://api.marsvista.dev/api/v2";
-	private static final String API_KEY_HEADER = "X-API-Key";
+	private static final Logger LOGGER = Logger.getLogger(MarsVistaClient.class);
 	private static final int DEFAULT_PER_PAGE = 100;
 
-	private final RestTemplate restTemplate;
-	private final ObjectMapper objectMapper;
-
-	@Value("${api.key}")
-	private String apiKey;
-
-	public MarsVistaClient(RestTemplate restTemplate, ObjectMapper objectMapper) {
-		this.restTemplate = restTemplate;
-		this.objectMapper = objectMapper;
-	}
+	@Inject
+	@RestClient
+	MarsVistaApi marsVistaApi;
 
 	public List<Rover> listRoversWithCameras() {
-		JsonNode root = getJson(UriComponentsBuilder.fromHttpUrl(API_BASE + "/rovers").toUriString());
+		JsonNode root = safeCall(() -> marsVistaApi.listRovers());
 		List<Rover> rovers = new ArrayList<>();
 		if (root == null || !root.has("data")) {
 			return rovers;
@@ -62,7 +47,7 @@ public class MarsVistaClient {
 	}
 
 	public Rover getRover(String slug) {
-		JsonNode root = getJson(UriComponentsBuilder.fromHttpUrl(API_BASE + "/rovers/" + slug).toUriString());
+		JsonNode root = safeCall(() -> marsVistaApi.getRover(slug));
 		if (root == null || !root.has("data")) {
 			return null;
 		}
@@ -75,21 +60,13 @@ public class MarsVistaClient {
 	 */
 	public List<Photo> listPhotosForDate(String roverSlug, String earthDate, String cameraFilter) {
 		LocalDate day = LocalDate.parse(earthDate);
-		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(API_BASE + "/photos")
-				.queryParam("rovers", roverSlug)
-				.queryParam("date_min", day.toString())
-				.queryParam("date_max", day.plusDays(1).toString())
-				.queryParam("include", "rover,camera")
-				.queryParam("per_page", DEFAULT_PER_PAGE);
+		boolean filterClientSide = "perseverance".equalsIgnoreCase(roverSlug);
+		String cameras = (!filterClientSide && cameraFilter != null && !cameraFilter.isBlank()) ? cameraFilter : null;
 
-		// Perseverance hazcams are not accepted by the cameras filter; filter client-side.
-		if (cameraFilter != null && !cameraFilter.isBlank() && !"perseverance".equalsIgnoreCase(roverSlug)) {
-			builder.queryParam("cameras", cameraFilter);
-		}
-
-		JsonNode root = getJson(builder.toUriString());
+		JsonNode root = safeCall(() -> marsVistaApi.listPhotos(roverSlug, day.toString(), day.plusDays(1).toString(),
+				cameras, "rover,camera", DEFAULT_PER_PAGE));
 		List<Photo> photos = mapPhotoList(root);
-		if ("perseverance".equalsIgnoreCase(roverSlug) && cameraFilter != null && !cameraFilter.isBlank()) {
+		if (filterClientSide && cameraFilter != null && !cameraFilter.isBlank()) {
 			List<Photo> filtered = new ArrayList<>();
 			for (Photo photo : photos) {
 				if (photo.getCamera() != null && photo.getCamera().getId() != null
@@ -103,12 +80,25 @@ public class MarsVistaClient {
 	}
 
 	public Photo getPhotoById(long photoId) {
-		JsonNode root = getJson(UriComponentsBuilder.fromHttpUrl(API_BASE + "/photos/" + photoId)
-				.queryParam("include", "rover,camera").toUriString());
+		JsonNode root = safeCall(() -> marsVistaApi.getPhoto(photoId, "rover,camera"));
 		if (root == null || !root.has("data") || root.get("data").isNull()) {
 			return null;
 		}
 		return mapPhoto(root.get("data"));
+	}
+
+	private JsonNode safeCall(ApiCall call) {
+		try {
+			return call.get();
+		} catch (Exception e) {
+			LOGGER.warnf(e, "Mars Vista request failed");
+			return null;
+		}
+	}
+
+	@FunctionalInterface
+	private interface ApiCall {
+		JsonNode get();
 	}
 
 	private List<Photo> mapPhotoList(JsonNode root) {
@@ -202,24 +192,6 @@ public class MarsVistaClient {
 		camera.setName(name != null ? name : camera.getId());
 		camera.setFullName(text(attrs, "full_name"));
 		return camera;
-	}
-
-	private JsonNode getJson(String uri) {
-		LOGGER.debug("Mars Vista GET {}", uri);
-		try {
-			ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, authorizedEntity(),
-					String.class);
-			return objectMapper.readTree(response.getBody());
-		} catch (Exception e) {
-			LOGGER.warn("Mars Vista request failed for {}: {}", uri, e.toString());
-			return null;
-		}
-	}
-
-	private HttpEntity<Void> authorizedEntity() {
-		HttpHeaders headers = new HttpHeaders();
-		headers.set(API_KEY_HEADER, apiKey);
-		return new HttpEntity<>(headers);
 	}
 
 	private static String text(JsonNode node, String field) {

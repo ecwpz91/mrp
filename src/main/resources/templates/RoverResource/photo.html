@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-
+<html>
 <head>
   <base target="_blank">
   <meta charset="utf-8">
@@ -11,7 +10,7 @@
     integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
     integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
-  <link rel="stylesheet" href="../css/shards.min.css">
+  <link rel="stylesheet" href="/css/shards.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
@@ -27,12 +26,11 @@
     }
   </style>
 </head>
-
 <body>
   <table style="background-color: gray;">
     <tr style="width: 100%">
       <td style="width: 1%">
-        <img alt="nasa logo" src="../images/logo.png" height="150px;">
+        <img alt="nasa logo" src="/images/logo.png" height="150px;">
       </td>
       <td style="width: 55%" align="left">
         <h2>Welcome to Mars Rover Photos, an Image Management Tool</h2>
@@ -42,69 +40,76 @@
 
   <div align="center" style="min-height: 400px; padding-bottom: 2rem;">
     <p style="margin: 1rem 0;">
-      <a th:href="@{/rovers}" target="_self">← Back to Rovers</a>
+      <a href="/rovers" target="_self">← Back to Rovers</a>
       &nbsp;|&nbsp;
-      <a th:href="@{/}" target="_self">Home</a>
+      <a href="/" target="_self">Home</a>
     </p>
-    <div th:switch="${photo}">
-      <h2 th:case="null">No Photo found!</h2>
-      <div th:case="*">
-        <h2>Photo Details</h2>
-        <table border="1">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Photo</th>
-              <th>Earth Date</th>
-              <th>Sol</th>
-              <th>Camera</th>
-              <th>Rover</th>
-              <th>Title / Caption</th>
-              <th>Orbital context</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td th:text="${photo.id}"></td>
-              <td>
-                <a th:href="${photo.imgSrc}">
-                  <img alt="Mars rover photo" th:src="${photo.imgSrc}" width="500" height="300" />
-                </a>
-              </td>
-              <td th:text="${photo.earthDate}"></td>
-              <td th:text="${photo.sol}"></td>
-              <td>
-                <span th:if="${photo.camera != null}"
-                  th:text="|${photo.camera.name} — ${photo.camera.fullName}|"></span>
-              </td>
-              <td>
-                <span th:if="${photo.rover != null}" th:text="${photo.rover.name}"></span>
-              </td>
-              <td style="max-width: 280px; text-align: left; padding: 0.5rem;">
-                <div th:if="${photo.title != null}" th:text="${photo.title}" style="font-weight: bold;"></div>
-                <div th:if="${photo.caption != null}" th:text="${photo.caption}" style="font-size: 0.9rem;"></div>
-              </td>
-              <td th:if="${trek != null}">
-                <div id="trek-map"
-                  th:attr="data-tile-url=${trek.tileUrlTemplate},
-                           data-center-lat=${trek.centerLat},
-                           data-center-lon=${trek.centerLon},
-                           data-min-lat=${trek.minLat},
-                           data-min-lon=${trek.minLon},
-                           data-max-lat=${trek.maxLat},
-                           data-max-lon=${trek.maxLon},
-                           data-layer-title=${trek.layerTitle}"></div>
-                <p class="trek-caption"
-                  th:text="|Landing-site orbital mosaic (not the rover's exact position on ${photo.earthDate} / sol ${photo.sol}). ${trek.layerTitle}|"></p>
-                <p class="trek-caption">
-                  <a th:href="${trek.exploreUrl}" target="_blank" rel="noopener noreferrer">Open in Mars Trek</a>
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    {#if !photo}
+    <h2>No Photo found!</h2>
+    {#else}
+    <h2>Photo Details</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Photo</th>
+          <th>Earth Date</th>
+          <th>Sol</th>
+          <th>Camera</th>
+          <th>Rover</th>
+          <th>Title / Caption</th>
+          <th>Orbital context</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{photo.id}</td>
+          <td>
+            <a href="{photo.imgSrc}">
+              <img alt="Mars rover photo" src="{photo.imgSrc}" width="500" height="300" />
+            </a>
+          </td>
+          <td>{photo.earthDate}</td>
+          <td>{photo.sol}</td>
+          <td>
+            {#if photo.camera}
+            {photo.camera.name} — {photo.camera.fullName}
+            {/if}
+          </td>
+          <td>
+            {#if photo.rover}
+            {photo.rover.name}
+            {/if}
+          </td>
+          <td style="max-width: 280px; text-align: left; padding: 0.5rem;">
+            {#if photo.title}
+            <div style="font-weight: bold;">{photo.title}</div>
+            {/if}
+            {#if photo.caption}
+            <div style="font-size: 0.9rem;">{photo.caption}</div>
+            {/if}
+          </td>
+          <td>
+            {#if trek}
+            <div id="trek-map"
+              data-tile-url="{trek.tileUrlTemplate}"
+              data-center-lat="{trek.centerLat}"
+              data-center-lon="{trek.centerLon}"
+              data-min-lat="{trek.minLat}"
+              data-min-lon="{trek.minLon}"
+              data-max-lat="{trek.maxLat}"
+              data-max-lon="{trek.maxLon}"
+              data-layer-title="{trek.layerTitle}"></div>
+            <p class="trek-caption">Landing-site orbital mosaic (not the rover's exact position on {photo.earthDate} / sol {photo.sol}). {trek.layerTitle}</p>
+            <p class="trek-caption">
+              <a href="{trek.exploreUrl}" target="_blank" rel="noopener noreferrer">Open in Mars Trek</a>
+            </p>
+            {/if}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    {/if}
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -147,5 +152,4 @@
     })();
   </script>
 </body>
-
 </html>

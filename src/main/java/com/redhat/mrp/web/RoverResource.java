@@ -1,15 +1,6 @@
-package com.redhat.mrp.controller;
+package com.redhat.mrp.web;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -17,42 +8,62 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.jboss.logging.Logger;
+
 import com.redhat.mrp.client.MarsVistaClient;
 import com.redhat.mrp.model.LandingSiteContext;
 import com.redhat.mrp.model.Photo;
 import com.redhat.mrp.model.Rover;
 
-@Controller
-@RequestMapping("/")
-public class RoverController {
+import io.quarkus.qute.CheckedTemplate;
+import io.quarkus.qute.TemplateInstance;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RoverController.class);
+@Path("/")
+public class RoverResource {
+
+	private static final Logger LOGGER = Logger.getLogger(RoverResource.class);
 	private static final String FHAZ = "FHAZ";
 	/** Prefix match for Perseverance (v2 cameras filter rejects FRONT_HAZCAM_* names). */
 	private static final String PERSEVERANCE_FHAZ_PREFIX = "FRONT_HAZCAM";
 	private static final int MAX_PHOTO_ATTEMPTS = 10;
 	private static final Random RANDOM = new Random();
 
-	private final MarsVistaClient marsVistaClient;
+	@Inject
+	MarsVistaClient marsVistaClient;
 
-	public RoverController(MarsVistaClient marsVistaClient) {
-		this.marsVistaClient = marsVistaClient;
+	@CheckedTemplate
+	public static class Templates {
+		public static native TemplateInstance rovers(List<Rover> rovers);
+
+		public static native TemplateInstance rover(Rover rover);
+
+		public static native TemplateInstance photo(Photo photo, LandingSiteContext trek);
 	}
 
-	@GetMapping("/rovers")
-	public String findAllRovers(ModelMap model) {
-		model.put("rovers", marsVistaClient.listRoversWithCameras());
-		return "rovers";
+	@GET
+	@Path("/rovers")
+	@Produces(MediaType.TEXT_HTML)
+	public TemplateInstance findAllRovers() {
+		return Templates.rovers(marsVistaClient.listRoversWithCameras());
 	}
 
-	@GetMapping("/rover/{name}")
-	public String findRoverByName(ModelMap model, @PathVariable String name) {
+	@GET
+	@Path("/rover/{name}")
+	@Produces(MediaType.TEXT_HTML)
+	public TemplateInstance findRoverByName(@PathParam("name") String name) {
 		Rover result = marsVistaClient.getRover(name);
 		if (result != null) {
-			LOGGER.debug("Rover :: {}", result);
+			LOGGER.debugf("Rover :: %s", result);
 		}
-		model.put("rover", result);
-		return "rover";
+		return Templates.rover(result);
 	}
 
 	/**
@@ -60,22 +71,19 @@ public class RoverController {
 	 * (earthDate + photoId + camera) so refresh keeps the same photo. Pick a new
 	 * image from /rovers.
 	 */
-	@GetMapping("/photo/{name}")
-	public String getPhoto(ModelMap model, @PathVariable String name,
-			@RequestParam(value = "landingDate", required = false) String landingDate,
-			@RequestParam(value = "maxDate", required = false) String maxDate,
-			@RequestParam(value = "earthDate", required = false) String earthDate,
-			@RequestParam(value = "photoId", required = false) Long photoId,
-			@RequestParam(value = "camera", required = false) String camera) {
+	@GET
+	@Path("/photo/{name}")
+	@Produces(MediaType.TEXT_HTML)
+	public Object getPhoto(@PathParam("name") String name, @QueryParam("landingDate") String landingDate,
+			@QueryParam("maxDate") String maxDate, @QueryParam("earthDate") String earthDate,
+			@QueryParam("photoId") Long photoId, @QueryParam("camera") String camera) {
 
 		if (photoId != null) {
 			Photo photo = marsVistaClient.getPhotoById(photoId);
 			if (photo == null) {
 				throw new IllegalArgumentException("Photo " + photoId + " was not found.");
 			}
-			model.put("photo", photo);
-			model.put("trek", LandingSiteContext.forRover(name));
-			return "photo";
+			return Templates.photo(photo, LandingSiteContext.forRover(name));
 		}
 
 		if (landingDate == null || maxDate == null) {
@@ -85,8 +93,9 @@ public class RoverController {
 
 		Photo randomPhoto = pickRandomPhoto(name, landingDate, maxDate);
 		String cam = cameraParamFor(name);
-		return "redirect:/photo/" + name + "?earthDate=" + randomPhoto.getEarthDate() + "&photoId="
-				+ randomPhoto.getId() + "&camera=" + cam;
+		URI location = URI.create("/photo/" + name + "?earthDate=" + randomPhoto.getEarthDate() + "&photoId="
+				+ randomPhoto.getId() + "&camera=" + cam);
+		return Response.seeOther(location).build();
 	}
 
 	private Photo pickRandomPhoto(String name, String landingDate, String maxDate) {
@@ -102,11 +111,11 @@ public class RoverController {
 			lastAttempt = from.plusDays(randomDays);
 			List<Photo> photos = marsVistaClient.listPhotosForDate(name, lastAttempt.toString(), camera);
 			if (photos.isEmpty()) {
-				LOGGER.debug("No {} photos for {} on {}; retrying", camera, name, lastAttempt);
+				LOGGER.debugf("No %s photos for %s on %s; retrying", camera, name, lastAttempt);
 				continue;
 			}
 			Photo randomPhoto = photos.get(RANDOM.nextInt(photos.size()));
-			LOGGER.debug("Random photo picked :: {}", randomPhoto);
+			LOGGER.debugf("Random photo picked :: %s", randomPhoto);
 			return randomPhoto;
 		}
 

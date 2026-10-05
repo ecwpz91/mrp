@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<title>Mars Rover Photos</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+		integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+		integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+	<link rel="stylesheet" href="/css/shards.min.css">
+</head>
+<body>
+	<table style="background-color: gray;">
+		<tr style="width: 100%">
+			<td style="width: 1%">
+				<img alt="nasa logo" src="/images/logo.png" height="150px;">
+			</td>
+			<td style="width: 55%" align="left">
+				<h2>Welcome to Mars Rover Photos, an Image Management Tool</h2>
+			</td>
+		</tr>
+	</table>
+
+	<div align="center" style="height: 400px;">
+		{#if !rover}
+		<h2>No Rover found!</h2>
+		{#else}
+		<h2>Rover Details</h2>
+		<table border="1">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>{rover.id}</td>
+					<td>{rover.name}</td>
+				</tr>
+			</tbody>
+		</table>
+		<p style="margin-top: 1rem;"><a href="/rovers">← Back to Rovers</a></p>
+		{/if}
+	</div>
+</body>
+</html>

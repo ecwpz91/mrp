@@ -9,12 +9,12 @@ Key context for features, copy, and documentation in this repository:
 - **Scientific Impact**: The seasonal fans mapped by volunteers yield data on Martian wind speed and direction, aiding large-scale weather measurements and helping scientists understand surface processes, atmospheric conditions, and the planet's evolution.
 
 ## Tech Stack & Architecture
-- **Framework**: Java with Spring Boot (MVC architecture)
-- **Frontend**: Thymeleaf templates (`src/main/resources/templates`), HTML, and CSS (Shards UI)
-- **External Integration**: Mars Vista API v2 (`api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` and `X-API-Key` header)
+- **Framework**: Java 17+ with Quarkus (JAX-RS + Qute)
+- **Frontend**: Qute templates (`src/main/resources/templates`), static assets under `META-INF/resources`, CSS (Shards UI)
+- **External Integration**: Mars Vista API v2 (`api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` and `X-API-Key` header via REST Client)
 - **Deployment & DevOps**: Kubernetes, OpenShift, Docker, and Jenkins CI/CD
 
 ## Coding & Architectural Conventions
-1. Keep controller endpoints cleanly mapped inside `com.redhat.mrp.controller`.
-2. Keep data representations and API response bindings under `com.redhat.mrp.model`.
+1. Keep HTTP endpoints cleanly mapped inside `com.redhat.mrp.web`.
+2. Keep Mars Vista REST Client code under `com.redhat.mrp.client` and view models under `com.redhat.mrp.model`.
 3. When adding UI features or text copy, preserve the citizen-science tone focused on helping volunteers identify features (fans, blotches, spiders, Swiss cheese terrain) to assist AI training.
