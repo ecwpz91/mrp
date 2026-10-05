@@ -1,0 +1,20 @@
+# Mars Rover Photos (MRP) - Project Context & Guidelines
+
+## Project Purpose & Background
+Mars Rover Photos (MRP) is a Spring Boot application designed to support volunteer-driven scientific analysis of high-resolution images from Mars' south polar region (taken by NASA's Mars Reconnaissance Orbiter).
+
+Key context for features, copy, and documentation in this repository:
+- **Volunteer Classification**: Volunteers review images to mark surface features including seasonal fans, blotches, and exotic terrain types like "spiders" and "Swiss cheese."
+- **AI/ML Training**: Human pattern recognition classifications are compared against AI model predictions to train, refine, and improve machine learning algorithms where AI models currently struggle.
+- **Scientific Impact**: The seasonal fans mapped by volunteers yield data on Martian wind speed and direction, aiding large-scale weather measurements and helping scientists understand surface processes, atmospheric conditions, and the planet's evolution.
+
+## Tech Stack & Architecture
+- **Framework**: Java with Spring Boot (MVC architecture)
+- **Frontend**: Thymeleaf templates (`src/main/resources/templates`), HTML, and CSS (Shards UI)
+- **External Integration**: NASA Mars APIs (requires `api.key` configured in `application.properties`)
+- **Deployment & DevOps**: Kubernetes, OpenShift, Docker, and Jenkins CI/CD
+
+## Coding & Architectural Conventions
+1. Keep controller endpoints cleanly mapped inside `com.redhat.mrp.controller`.
+2. Keep data representations and API response bindings under `com.redhat.mrp.model`.
+3. When adding UI features or text copy, preserve the citizen-science tone focused on helping volunteers identify features (fans, blotches, spiders, Swiss cheese terrain) to assist AI training.

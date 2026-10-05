@@ -19,6 +19,7 @@ target/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -30,9 +31,45 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+### VS Code / Cursor ###
 /.vscode/
 .tern-project
+.cursor/
+!.cursorrules
+
+### Local secrets & overrides ###
+.env
+.env.*
+!.env.example
+**/application-local.properties
+**/application-*.local.properties
+
+### OS / editor junk ###
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+### Quarkus (future / local tooling) ###
+.quarkus/
+quarkus.log
+
+### H2 / local databases ###
+*.db
+*.mv.db
+*.trace.db
+*.lock.db
+
+### Maven ###
+.mvn/timing.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.flattened-pom.xml
 
 # Compiled class file
 *.class
@@ -57,5 +94,6 @@ build/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+replay_pid*
 /.apt_generated/
 /.apt_generated_tests
