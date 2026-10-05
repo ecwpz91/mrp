@@ -21,3 +21,14 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: QUARKUS_CONFIG_LOCATIONS
+              value: file:/etc/mrp/application.properties
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/mrp
+              readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: mrp-app-config

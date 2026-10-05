@@ -106,11 +106,15 @@ Stack: Java 17+, Quarkus 3.40 LTS (REST, Qute, REST Client, SmallRye Health, Mic
 
 ### Kubernetes
 
+Apply the ConfigMap first (so the Deployment can mount it), then the runtime manifests:
+
 ```bash
+# edit openshift/configmap.yaml and set a real api.key (do not commit it)
+kubectl apply -f openshift/configmap.yaml
 kubectl apply -f k8s/
 ```
 
-Ensure the runtime has a Mars Vista API key (for example via `MARSVISTA_API_KEY` in the Deployment). Do not commit a real key.
+`k8s/deployment.yaml` mounts ConfigMap `mrp-app-config` at `/etc/mrp` and sets `QUARKUS_CONFIG_LOCATIONS` so Quarkus loads that `application.properties` (including `api.key`).
 
 ### OpenShift (step by step)
 
@@ -180,7 +184,7 @@ Edit `openshift/configmap.yaml` and set a real `api.key` (do not commit it), the
 oc apply -f openshift/configmap.yaml
 ```
 
-Mount or inject that ConfigMap (or set `MARSVISTA_API_KEY`) on the Deployment before relying on live API calls. Prefer a Secret for production.
+Prefer a Secret for production. The Deployment mounts this ConfigMap; apply it before (or with) the Deployment so the pod can start.
 
 #### 5. Deploy the app (`oc apply`)
 
@@ -196,7 +200,7 @@ Or apply the whole directory:
 oc apply -f k8s/
 ```
 
-`k8s/deployment.yaml` references `quay.io/ecwpz91/mrp:latest` directly. After pods are running:
+`k8s/deployment.yaml` pulls `quay.io/ecwpz91/mrp:latest`, mounts ConfigMap `mrp-app-config` as `/etc/mrp/application.properties`, and points Quarkus at it via `QUARKUS_CONFIG_LOCATIONS`. After pods are running:
 
 ```bash
 oc get pods,svc,route
