@@ -95,22 +95,22 @@
 					</a>
 					{#if rover.landingDate && rover.maxDate}
 					<form class="mrp-date-pick" method="get" action="/photo/{rover.id}" data-mrp-date-pick>
-						<button type="button" class="mrp-date-pick__btn" data-mrp-date-trigger
-							aria-haspopup="dialog"
-							aria-label="Select Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}">
+						<div class="mrp-date-pick__face" aria-hidden="true">
 							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
 								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-								stroke-linejoin="round" aria-hidden="true" focusable="false">
+								stroke-linejoin="round" focusable="false">
 								<path d="M8 2v4"></path>
 								<path d="M16 2v4"></path>
 								<rect width="18" height="18" x="3" y="4" rx="2"></rect>
 								<path d="M3 10h18"></path>
 							</svg>
 							<span class="mrp-date-pick__label" data-mrp-date-label>Earth Date</span>
-						</button>
+						</div>
 						<input class="mrp-date-pick__input" type="date" name="earthDate"
 							min="{rover.landingDate}" max="{rover.maxDate}" required
-							tabindex="-1" aria-hidden="true" data-mrp-date-input>
+							aria-haspopup="dialog"
+							aria-label="Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}"
+							data-mrp-date-input>
 					</form>
 					{/if}
 					<a class="mrp-btn mrp-btn--secondary mrp-btn--block" href="/rover/{rover.id}">Rover Details</a>
@@ -129,26 +129,13 @@
 	<script>
 		(function () {
 			document.querySelectorAll('[data-mrp-date-pick]').forEach(function (form) {
-				var trigger = form.querySelector('[data-mrp-date-trigger]');
 				var input = form.querySelector('[data-mrp-date-input]');
 				var label = form.querySelector('[data-mrp-date-label]');
-				if (!trigger || !input || !label) {
+				if (!input || !label) {
 					return;
 				}
 
-				trigger.addEventListener('click', function () {
-					try {
-						if (typeof input.showPicker === 'function') {
-							input.showPicker();
-							return;
-						}
-					} catch (err) {
-						/* ignore — fall back below */
-					}
-					input.focus({ preventScroll: true });
-					input.click();
-				});
-
+				/* Tap goes straight to the overlay input (required on iOS Safari). */
 				input.addEventListener('change', function () {
 					if (!input.value) {
 						label.textContent = 'Earth Date';
