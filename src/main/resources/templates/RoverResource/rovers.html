@@ -110,13 +110,9 @@
 							<input class="mrp-date-pick__input" type="date" name="earthDate"
 								min="{rover.landingDate}" max="{rover.maxDate}"
 								aria-haspopup="dialog"
-								aria-describedby="mrp-date-hint-{rover.id}"
 								aria-label="Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}"
 								data-mrp-date-input>
 						</div>
-						<p class="mrp-date-pick__hint" id="mrp-date-hint-{rover.id}">
-							{rover.landingDate} – {rover.maxDate}
-						</p>
 						<p class="mrp-date-pick__msg" data-mrp-date-msg hidden></p>
 						<button type="submit" class="mrp-btn mrp-btn--secondary mrp-btn--block mrp-date-pick__submit"
 							data-mrp-date-submit hidden disabled>
