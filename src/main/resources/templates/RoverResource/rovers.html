@@ -28,7 +28,7 @@
 		<p class="mrp-empty">No rover data is available right now. Try again later.</p>
 		{#else}
 		<h2 class="mrp-page-title">Listed Rovers with MRP</h2>
-		<p class="mrp-lead">Pick a mission to open a random hazcam photo for classification practice.</p>
+		<p class="mrp-lead">Open a random hazcam shot for classification practice, or jump to each mission’s most recent photo.</p>
 
 		<ul class="mrp-card-grid">
 			{#for rover in rovers}
@@ -73,9 +73,15 @@
 				{/if}
 
 				<div class="mrp-card__actions">
+					{#if rover.maxDate}
+					<a class="mrp-btn mrp-btn--secondary mrp-btn--block"
+						href="/photo/{rover.id}?earthDate={rover.maxDate}">
+						{#if rover.status && rover.status.toLowerCase == 'active'}Recent Photo{#else}Last Photo{/if}
+					</a>
+					{/if}
 					<a class="mrp-btn mrp-btn--block"
 						href="/photo/{rover.id}?landingDate={rover.landingDate}&maxDate={rover.maxDate}">Random Photo</a>
-					<a class="mrp-btn mrp-btn--secondary mrp-btn--block" href="/rover/{rover.id}">Rover details</a>
+					<a class="mrp-btn mrp-btn--secondary mrp-btn--block" href="/rover/{rover.id}">Rover Details</a>
 				</div>
 			</li>
 			{/for}

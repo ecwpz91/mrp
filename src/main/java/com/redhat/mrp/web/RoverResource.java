@@ -67,9 +67,14 @@ public class RoverResource {
 	}
 
 	/**
-	 * Random selection (landingDate + maxDate) redirects once to a stable URL
-	 * (earthDate + photoId + camera) so refresh keeps the same photo. Pick a new
-	 * image from /rovers.
+	 * Photo selection redirects once to a stable URL (earthDate + photoId + camera)
+	 * so refresh keeps the same image.
+	 * <ul>
+	 * <li>photoId — render that photo</li>
+	 * <li>earthDate only — hazcam from that day (walks back a few days if empty);
+	 * used for Recent/Last Photo from /rovers</li>
+	 * <li>landingDate + maxDate — random day in range; Random Photo from /rovers</li>
+	 * </ul>
 	 */
 	@GET
 	@Path("/photo/{name}")
@@ -86,15 +91,19 @@ public class RoverResource {
 			return Templates.photo(photo, LandingSiteContext.forRover(name));
 		}
 
-		if (landingDate == null || maxDate == null) {
+		Photo selected;
+		if (earthDate != null && !earthDate.isBlank()) {
+			selected = pickPhotoOnOrBefore(name, earthDate);
+		} else if (landingDate != null && maxDate != null) {
+			selected = pickRandomPhoto(name, landingDate, maxDate);
+		} else {
 			throw new IllegalArgumentException(
-					"Choose a random photo from the Rovers page, or open a photo link that includes photoId.");
+					"Choose a photo from the Rovers page, or open a photo link that includes photoId.");
 		}
 
-		Photo randomPhoto = pickRandomPhoto(name, landingDate, maxDate);
 		String cam = cameraParamFor(name);
-		URI location = URI.create("/photo/" + name + "?earthDate=" + randomPhoto.getEarthDate() + "&photoId="
-				+ randomPhoto.getId() + "&camera=" + cam);
+		URI location = URI.create("/photo/" + name + "?earthDate=" + selected.getEarthDate() + "&photoId="
+				+ selected.getId() + "&camera=" + cam);
 		return Response.seeOther(location).build();
 	}
 
@@ -123,6 +132,28 @@ public class RoverResource {
 				"No photos available after " + MAX_PHOTO_ATTEMPTS + " attempts"
 						+ (lastAttempt != null ? " (last date " + lastAttempt + ")" : "")
 						+ ". You may want to try other dates.");
+	}
+
+	/** Prefer hazcam photos on earthDate; walk back up to {@link #MAX_PHOTO_ATTEMPTS} days. */
+	private Photo pickPhotoOnOrBefore(String name, String earthDate) {
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
+		LocalDate day = LocalDate.parse(earthDate, formatter);
+		String camera = cameraFilterFor(name);
+
+		for (int attempt = 0; attempt < MAX_PHOTO_ATTEMPTS; attempt++) {
+			LocalDate candidate = day.minusDays(attempt);
+			List<Photo> photos = marsVistaClient.listPhotosForDate(name, candidate.toString(), camera);
+			if (photos.isEmpty()) {
+				LOGGER.debugf("No %s photos for %s on %s; walking back", camera, name, candidate);
+				continue;
+			}
+			Photo photo = photos.get(RANDOM.nextInt(photos.size()));
+			LOGGER.debugf("On-or-before photo picked :: %s", photo);
+			return photo;
+		}
+
+		throw new IllegalArgumentException(
+				"No hazcam photos found on or shortly before " + earthDate + " for " + name + ".");
 	}
 
 	private static String cameraFilterFor(String roverName) {
