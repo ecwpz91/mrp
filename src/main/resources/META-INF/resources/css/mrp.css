@@ -184,6 +184,19 @@ a:focus {
   width: 100%;
 }
 
+.mrp-btn--with-icon {
+  gap: 0.5rem;
+}
+
+.mrp-btn--with-icon svg {
+  display: block;
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  max-width: 1.25rem;
+  max-height: 1.25rem;
+}
+
 .mrp-btn--secondary {
   color: var(--mrp-ink);
   background: var(--mrp-surface);
