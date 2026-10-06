@@ -28,7 +28,7 @@
 		<p class="mrp-empty">No rover data is available right now. Try again later.</p>
 		{#else}
 		<h2 class="mrp-page-title">Listed Rovers with MRP</h2>
-		<p class="mrp-lead">Open a random hazcam shot for classification practice, or jump to each mission’s most recent photo.</p>
+		<p class="mrp-lead">Open a recent, random, or calendar-picked hazcam shot for classification practice.</p>
 
 		<ul class="mrp-card-grid">
 			{#for rover in rovers}
@@ -80,7 +80,27 @@
 					</a>
 					{/if}
 					<a class="mrp-btn mrp-btn--block"
-						href="/photo/{rover.id}?landingDate={rover.landingDate}&maxDate={rover.maxDate}">Random Photo</a>
+						href="/photo/{rover.id}?landingDate={rover.landingDate}&maxDate={rover.maxDate}">Feeling Lucky</a>
+					{#if rover.landingDate && rover.maxDate}
+					<form class="mrp-date-pick" method="get" action="/photo/{rover.id}" data-mrp-date-pick>
+						<div class="mrp-btn mrp-btn--green mrp-btn--block mrp-date-pick__face" aria-hidden="true">
+							<svg class="mrp-date-pick__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+								stroke-linejoin="round" focusable="false">
+								<path d="M8 2v4"></path>
+								<path d="M16 2v4"></path>
+								<rect width="18" height="18" x="3" y="4" rx="2"></rect>
+								<path d="M3 10h18"></path>
+							</svg>
+							<span class="mrp-date-pick__label" data-mrp-date-label>Select Earth Date</span>
+						</div>
+						<input class="mrp-date-pick__input" type="date" name="earthDate"
+							min="{rover.landingDate}" max="{rover.maxDate}" required
+							aria-haspopup="dialog"
+							aria-label="Select Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}"
+							data-mrp-date-input>
+					</form>
+					{/if}
 					<a class="mrp-btn mrp-btn--secondary mrp-btn--block" href="/rover/{rover.id}">Rover Details</a>
 				</div>
 			</li>
@@ -93,5 +113,30 @@
 		MRP Image Management Tool &copy;
 		<a href="http://msurbey.com" target="_blank" rel="noopener noreferrer">Michael Surbey</a>
 	</footer>
+
+	<script>
+		(function () {
+			document.querySelectorAll('[data-mrp-date-pick]').forEach(function (form) {
+				var input = form.querySelector('[data-mrp-date-input]');
+				var label = form.querySelector('[data-mrp-date-label]');
+				if (!input || !label) {
+					return;
+				}
+
+				input.addEventListener('change', function () {
+					if (!input.value) {
+						label.textContent = 'Select Earth Date';
+						return;
+					}
+					label.textContent = input.value;
+					if (typeof form.requestSubmit === 'function') {
+						form.requestSubmit();
+					} else {
+						form.submit();
+					}
+				});
+			});
+		})();
+	</script>
 </body>
 </html>

@@ -10,6 +10,8 @@
   --mrp-header-ink: #ffffff;
   --mrp-accent: #0066cc;
   --mrp-accent-hover: #004c99;
+  --mrp-green: #1b7a3c;
+  --mrp-green-hover: #145c2d;
   --mrp-status-active: #1b7a3c;
   --mrp-status-complete: #6b7280;
   --mrp-radius: 0.5rem;
@@ -192,6 +194,105 @@ a:focus {
 .mrp-btn--secondary:focus {
   color: var(--mrp-ink);
   background: #eef3f9;
+}
+
+.mrp-btn--green {
+  color: #ffffff;
+  background: var(--mrp-green);
+  border: 1px solid transparent;
+  gap: 0.5rem;
+}
+
+.mrp-btn--green:hover {
+  color: #ffffff;
+  background: var(--mrp-green-hover);
+}
+
+.mrp-btn--green:focus,
+.mrp-btn--green:focus-visible {
+  color: #ffffff;
+  background: var(--mrp-green-hover);
+  outline: 3px solid #8fd4a8;
+  outline-offset: 2px;
+}
+
+/* Earth-date shortcut: styled face + invisible native input on top (mobile calendar) */
+.mrp-date-pick {
+  position: relative;
+  width: 100%;
+}
+
+.mrp-date-pick__face {
+  width: 100%;
+  pointer-events: none;
+  gap: 0.5rem;
+}
+
+.mrp-date-pick__icon {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #ffffff;
+  stroke: #ffffff;
+}
+
+.mrp-date-pick__label {
+  color: #ffffff;
+}
+
+.mrp-date-pick__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--mrp-radius);
+  cursor: pointer;
+  opacity: 0;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: transparent;
+  font-size: 1rem; /* avoid iOS input zoom */
+}
+
+/* Kill WebKit’s mm/dd/yyyy edit UI so it never bleeds through the green face */
+.mrp-date-pick__input::-webkit-datetime-edit,
+.mrp-date-pick__input::-webkit-datetime-edit-fields-wrapper,
+.mrp-date-pick__input::-webkit-datetime-edit-text,
+.mrp-date-pick__input::-webkit-datetime-edit-month-field,
+.mrp-date-pick__input::-webkit-datetime-edit-day-field,
+.mrp-date-pick__input::-webkit-datetime-edit-year-field,
+.mrp-date-pick__input::-webkit-inner-spin-button,
+.mrp-date-pick__input::-webkit-clear-button {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: transparent;
+}
+
+.mrp-date-pick__input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  color: transparent;
+  background: transparent;
+}
+
+.mrp-date-pick:focus-within .mrp-date-pick__face {
+  background: var(--mrp-green-hover);
+  outline: 3px solid #8fd4a8;
+  outline-offset: 2px;
+}
+
+.mrp-date-pick:hover .mrp-date-pick__face {
+  background: var(--mrp-green-hover);
 }
 
 /* —— Home —— */
