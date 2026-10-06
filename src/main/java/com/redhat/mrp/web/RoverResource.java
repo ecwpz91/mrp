@@ -100,7 +100,7 @@ public class RoverResource {
 
 		Photo selected;
 		if (earthDate != null && !earthDate.isBlank()) {
-			selected = pickPhotoOnOrBefore(name, earthDate);
+			selected = pickPhotoOnOrBefore(name, clampEarthDate(name, earthDate));
 		} else if (landingDate != null && maxDate != null) {
 			selected = pickRandomPhoto(name, landingDate, maxDate);
 		} else {
@@ -139,6 +139,39 @@ public class RoverResource {
 				"No photos available after " + MAX_PHOTO_ATTEMPTS + " attempts"
 						+ (lastAttempt != null ? " (last date " + lastAttempt + ")" : "")
 						+ ". You may want to try other dates.");
+	}
+
+	/**
+	 * Clamp earthDate into the rover's landing→max window. Safari date wheels often
+	 * ignore HTML min/max; volunteers should still land on a mission day.
+	 */
+	private String clampEarthDate(String name, String earthDate) {
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
+		LocalDate day = LocalDate.parse(earthDate, formatter);
+		Rover rover = marsVistaClient.getRover(name);
+		if (rover == null) {
+			return earthDate;
+		}
+
+		String landing = rover.getLandingDate();
+		if (landing != null && !landing.isBlank()) {
+			LocalDate landingDay = LocalDate.parse(landing, formatter);
+			if (day.isBefore(landingDay)) {
+				LOGGER.debugf("Clamping earthDate %s up to landing %s for %s", earthDate, landing, name);
+				day = landingDay;
+			}
+		}
+
+		String max = rover.getMaxDate();
+		if (max != null && !max.isBlank()) {
+			LocalDate maxDay = LocalDate.parse(max, formatter);
+			if (day.isAfter(maxDay)) {
+				LOGGER.debugf("Clamping earthDate %s down to max %s for %s", earthDate, max, name);
+				day = maxDay;
+			}
+		}
+
+		return day.toString();
 	}
 
 	/** Prefer hazcam photos on earthDate; walk back up to {@link #MAX_PHOTO_ATTEMPTS} days. */

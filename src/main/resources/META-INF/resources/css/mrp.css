@@ -211,11 +211,19 @@ a:focus {
 
 /*
  * Earth-date shortcut:
- * green face for look + full-size transparent <input type="date"> on top.
+ * green face for look + full-size transparent <input type="date"> on the trigger.
  * iOS Safari only opens the calendar from a direct tap on a non-clipped input;
  * showPicker()/click() on a 1px hidden field fails there (Android often works).
+ * Navigate only via "View photo" — never on input change (iOS wheels fire early).
  */
 .mrp-date-pick {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mrp-date-pick__trigger {
   position: relative;
   width: 100%;
 }
@@ -239,11 +247,11 @@ a:focus {
   pointer-events: none;
 }
 
-.mrp-date-pick:hover .mrp-date-pick__face {
+.mrp-date-pick__trigger:hover .mrp-date-pick__face {
   background-color: #145c2d;
 }
 
-.mrp-date-pick:focus-within .mrp-date-pick__face {
+.mrp-date-pick__trigger:focus-within .mrp-date-pick__face {
   background-color: #145c2d;
   outline: 3px solid #8fd4a8;
   outline-offset: 2px;
@@ -308,6 +316,31 @@ a:focus {
   cursor: pointer;
   color: transparent;
   background: transparent;
+}
+
+.mrp-date-pick__hint {
+  margin: 0;
+  padding: 0 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--mrp-muted);
+}
+
+.mrp-date-pick__msg {
+  margin: 0;
+  padding: 0 0.15rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: #8a1f1f;
+}
+
+.mrp-date-pick__msg[hidden],
+.mrp-date-pick__submit[hidden] {
+  display: none !important;
+}
+
+.mrp-date-pick__submit {
+  margin: 0;
 }
 
 /* —— Home —— */
