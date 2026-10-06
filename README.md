@@ -49,13 +49,15 @@ Useful paths:
 |------|-------------|
 | `/` | Landing page |
 | `/rovers` | List all rovers from Mars Vista v2 (with cameras) |
-| `/rover/{name}` | Rover detail (e.g. `/rover/curiosity`) |
+| `/rover/{name}` | Rover detail with NASA Image Library highlights (e.g. `/rover/curiosity`) |
 | `/photo/{name}?landingDate=YYYY-MM-DD&maxDate=YYYY-MM-DD` | Picks a random hazcam photo, then redirects to a stable URL |
 | `/photo/{name}?earthDate=YYYY-MM-DD&photoId=…&camera=…` | Same photo on refresh (use Rovers → Random Photo for a new one) |
 | `/q/health` | Health checks |
 | `/q/metrics` | Prometheus metrics |
 
 The photo page shows the Mars Vista hazcam image alongside a [Mars Trek](https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars) landing-site mosaic (HiRISE for Curiosity/Spirit/Opportunity; global Viking centered on Jezero for Perseverance). Trek tiles load from `trek.nasa.gov` in the browser—no NASA API key. The map is mission landing-area context labeled with the photo’s earth date/sol, not the rover’s exact position that day.
+
+Rover detail pages also pull a few curated stills (selfies, landing, mission highlights) from the [NASA Image and Video Library](https://images-api.nasa.gov) search API—no API key required. Captions and credits link back to [images.nasa.gov](https://images.nasa.gov).
 
 ### Build and run the JAR
 

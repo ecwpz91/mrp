@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
-	<title>Mars Rover Photos — Rover</title>
+	<title>Mars Rover Photos — Rover{#if rover} · {rover.name}{/if}</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
 		integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
@@ -28,23 +28,100 @@
 		<h2 class="mrp-page-title">No Rover found</h2>
 		<p class="mrp-empty">That rover could not be loaded.</p>
 		{#else}
-		<h2 class="mrp-page-title">Rover Details</h2>
-		<div class="mrp-simple-table-wrap">
-			<table class="mrp-simple-table">
-				<thead>
-					<tr>
-						<th scope="col">ID</th>
-						<th scope="col">Name</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>{rover.id}</td>
-						<td>{rover.name}</td>
-					</tr>
-				</tbody>
-			</table>
+		<div class="mrp-rover-detail__header">
+			<h2 class="mrp-page-title">{rover.name}</h2>
+			{#if rover.status}
+			<span class="mrp-badge{#if rover.status.toLowerCase == 'active'} mrp-badge--active{/if}">{rover.status}</span>
+			{/if}
 		</div>
+		<p class="mrp-lead">Mission brief and NASA Image Library highlights—then open a hazcam shot for classification practice.</p>
+
+		<section class="mrp-rover-detail" aria-label="Rover mission metadata">
+			<dl class="mrp-meta mrp-meta--detail">
+				<dt>ID</dt>
+				<dd>{rover.id}</dd>
+				{#if rover.landingDate}
+				<dt>Landing</dt>
+				<dd>{rover.landingDate}</dd>
+				{/if}
+				{#if rover.launchDate}
+				<dt>Launch</dt>
+				<dd>{rover.launchDate}</dd>
+				{/if}
+				{#if rover.maxSol > 0}
+				<dt>Max sol</dt>
+				<dd>{rover.maxSol}</dd>
+				{/if}
+				{#if rover.maxDate}
+				<dt>Max date</dt>
+				<dd>{rover.maxDate}</dd>
+				{/if}
+				{#if rover.totalPhotos > 0}
+				<dt>Photos</dt>
+				<dd>{rover.totalPhotos}</dd>
+				{/if}
+			</dl>
+
+			{#if rover.cameras && rover.cameras.length > 0}
+			<details class="mrp-cameras">
+				<summary>Cameras ({rover.cameras.length})</summary>
+				<ul class="mrp-camera-list">
+					{#for camera in rover.cameras}
+					<li>
+						<span class="cam-code">{camera.name}</span>
+						{#if camera.fullName}
+						<span class="cam-full">{camera.fullName}</span>
+						{/if}
+					</li>
+					{/for}
+				</ul>
+			</details>
+			{/if}
+
+			<div class="mrp-card__actions mrp-rover-detail__actions">
+				{#if rover.maxDate}
+				<a class="mrp-btn mrp-btn--secondary"
+					href="/photo/{rover.id}?earthDate={rover.maxDate}">
+					{#if rover.status && rover.status.toLowerCase == 'active'}Recent Photo{#else}Last Photo{/if}
+				</a>
+				{/if}
+				{#if rover.landingDate && rover.maxDate}
+				<a class="mrp-btn" href="/photo/{rover.id}?landingDate={rover.landingDate}&maxDate={rover.maxDate}">Feeling Lucky</a>
+				{/if}
+			</div>
+		</section>
+
+		<section class="mrp-library" aria-label="NASA Image Library highlights">
+			<h3 class="mrp-section-title">From NASA Image Library</h3>
+			{#if !highlights || highlights.size == 0}
+			<p class="mrp-empty mrp-empty--inline">No library highlights available right now.</p>
+			{#else}
+			<ul class="mrp-library-grid">
+				{#for image in highlights}
+				<li class="mrp-library-item">
+					<figure class="mrp-library-figure">
+						<a href="{image.detailsUrl}" target="_blank" rel="noopener noreferrer">
+							<img src="{image.imageUrl}" alt="{image.title}" width="640" height="360" loading="lazy" decoding="async">
+						</a>
+						<figcaption>
+							{#if image.title}
+							<strong class="mrp-library-title">{image.title}</strong>
+							{/if}
+							{#if image.caption}
+							<span class="mrp-library-caption">{image.caption}</span>
+							{/if}
+							<span class="mrp-library-credit">
+								Credit: {image.credit}
+								·
+								<a href="{image.detailsUrl}" target="_blank" rel="noopener noreferrer">images.nasa.gov</a>
+							</span>
+						</figcaption>
+					</figure>
+				</li>
+				{/for}
+			</ul>
+			{/if}
+		</section>
 		{/if}
 	</main>
 

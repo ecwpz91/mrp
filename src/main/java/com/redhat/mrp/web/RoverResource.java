@@ -11,7 +11,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.jboss.logging.Logger;
 
 import com.redhat.mrp.client.MarsVistaClient;
+import com.redhat.mrp.client.NasaImagesClient;
 import com.redhat.mrp.model.LandingSiteContext;
+import com.redhat.mrp.model.NasaLibraryImage;
 import com.redhat.mrp.model.Photo;
 import com.redhat.mrp.model.Rover;
 
@@ -39,11 +41,14 @@ public class RoverResource {
 	@Inject
 	MarsVistaClient marsVistaClient;
 
+	@Inject
+	NasaImagesClient nasaImagesClient;
+
 	@CheckedTemplate
 	public static class Templates {
 		public static native TemplateInstance rovers(List<Rover> rovers);
 
-		public static native TemplateInstance rover(Rover rover);
+		public static native TemplateInstance rover(Rover rover, List<NasaLibraryImage> highlights);
 
 		public static native TemplateInstance photo(Photo photo, LandingSiteContext trek);
 	}
@@ -60,10 +65,12 @@ public class RoverResource {
 	@Produces(MediaType.TEXT_HTML)
 	public TemplateInstance findRoverByName(@PathParam("name") String name) {
 		Rover result = marsVistaClient.getRover(name);
+		List<NasaLibraryImage> highlights = List.of();
 		if (result != null) {
 			LOGGER.debugf("Rover :: %s", result);
+			highlights = nasaImagesClient.findMissionHighlights(result.getId() != null ? result.getId() : name);
 		}
-		return Templates.rover(result);
+		return Templates.rover(result, highlights);
 	}
 
 	/**
