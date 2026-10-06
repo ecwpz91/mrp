@@ -210,11 +210,11 @@ a:focus {
 }
 
 /*
- * Earth-date shortcut:
- * green face for look + full-size transparent <input type="date"> on the trigger.
- * iOS Safari only opens the calendar from a direct tap on a non-clipped input;
- * showPicker()/click() on a 1px hidden field fails there (Android often works).
- * Navigate only via "View photo" — never on input change (iOS wheels fire early).
+ * Earth-date shortcut — inline action state:
+ * Default: secondary "Select Earth Date" (calendar overlay on the whole control).
+ * Selected: split row — date (re-open picker) | primary "View Photo →".
+ * iOS Safari needs a direct tap on a non-clipped <input type="date">.
+ * Navigate only via View Photo — never on input change (iOS wheels fire early).
  */
 .mrp-date-pick {
   width: 100%;
@@ -223,8 +223,17 @@ a:focus {
   gap: 0.35rem;
 }
 
+.mrp-date-pick__row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: var(--mrp-touch);
+}
+
 .mrp-date-pick__trigger {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
 }
 
@@ -241,39 +250,42 @@ a:focus {
   font-weight: 600;
   line-height: 1.2;
   color: #ffffff;
-  background-color: #1b7a3c;
+  background: var(--mrp-green);
   border: 1px solid transparent;
   border-radius: var(--mrp-radius);
   pointer-events: none;
 }
 
 .mrp-date-pick__trigger:hover .mrp-date-pick__face {
-  background-color: #145c2d;
+  background: var(--mrp-green-hover);
 }
 
 .mrp-date-pick__trigger:focus-within .mrp-date-pick__face {
-  background-color: #145c2d;
+  background: var(--mrp-green-hover);
   outline: 3px solid #8fd4a8;
   outline-offset: 2px;
 }
 
-.mrp-date-pick__face svg {
+.mrp-date-pick__icon {
   display: block;
   flex: 0 0 20px;
   width: 20px;
   height: 20px;
   max-width: 20px;
   max-height: 20px;
-  color: #ffffff;
-  stroke: #ffffff;
+  color: currentColor;
+  stroke: currentColor;
   fill: none;
 }
 
 .mrp-date-pick__label {
-  color: #ffffff;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Transparent hit-target over the face — must stay tappable on iOS */
+/* Transparent hit-target over the date face — must stay tappable on iOS */
 .mrp-date-pick__input {
   position: absolute;
   inset: 0;
@@ -318,6 +330,80 @@ a:focus {
   background: transparent;
 }
 
+.mrp-date-pick__view {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: var(--mrp-touch);
+  margin: 0;
+  padding: 0.55rem 0.95rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #ffffff;
+  background: var(--mrp-green);
+  border: 1px solid transparent;
+  border-radius: var(--mrp-radius);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mrp-date-pick__view:hover,
+.mrp-date-pick__view:focus {
+  color: #ffffff;
+  background: var(--mrp-green-hover);
+  outline: none;
+}
+
+.mrp-date-pick__view:focus-visible {
+  outline: 3px solid #8fd4a8;
+  outline-offset: 2px;
+}
+
+.mrp-date-pick__view-icon {
+  display: block;
+  flex: 0 0 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  max-width: 1.15rem;
+  max-height: 1.15rem;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Selected: date edit (left) + View Photo (right) as one split control */
+.mrp-date-pick--selected .mrp-date-pick__face {
+  justify-content: flex-start;
+  color: var(--mrp-ink);
+  background: #eef8f1;
+  border: 1px solid var(--mrp-border);
+  border-right: 0;
+  border-radius: var(--mrp-radius) 0 0 var(--mrp-radius);
+}
+
+.mrp-date-pick--selected .mrp-date-pick__trigger:hover .mrp-date-pick__face,
+.mrp-date-pick--selected .mrp-date-pick__trigger:focus-within .mrp-date-pick__face {
+  background: #e2f2e8;
+  outline: 3px solid #8fd4a8;
+  outline-offset: 2px;
+}
+
+.mrp-date-pick--selected .mrp-date-pick__icon {
+  opacity: 0.55;
+}
+
+.mrp-date-pick--selected .mrp-date-pick__input {
+  border-radius: var(--mrp-radius) 0 0 var(--mrp-radius);
+}
+
+.mrp-date-pick--selected .mrp-date-pick__view {
+  display: inline-flex;
+  border-radius: 0 var(--mrp-radius) var(--mrp-radius) 0;
+}
+
 .mrp-date-pick__msg {
   margin: 0;
   padding: 0 0.15rem;
@@ -327,12 +413,8 @@ a:focus {
 }
 
 .mrp-date-pick__msg[hidden],
-.mrp-date-pick__submit[hidden] {
+.mrp-date-pick__view[hidden] {
   display: none !important;
-}
-
-.mrp-date-pick__submit {
-  margin: 0;
 }
 
 /* —— Home —— */

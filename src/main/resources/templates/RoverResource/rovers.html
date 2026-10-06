@@ -95,29 +95,37 @@
 					</a>
 					{#if rover.landingDate && rover.maxDate}
 					<form class="mrp-date-pick" method="get" action="/photo/{rover.id}" data-mrp-date-pick novalidate>
-						<div class="mrp-date-pick__trigger">
-							<div class="mrp-date-pick__face" aria-hidden="true">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-									fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-									stroke-linejoin="round" focusable="false">
-									<path d="M8 2v4"></path>
-									<path d="M16 2v4"></path>
-									<rect width="18" height="18" x="3" y="4" rx="2"></rect>
-									<path d="M3 10h18"></path>
-								</svg>
-								<span class="mrp-date-pick__label" data-mrp-date-label>Earth Date</span>
+						<div class="mrp-date-pick__row">
+							<div class="mrp-date-pick__trigger">
+								<div class="mrp-date-pick__face" aria-hidden="true">
+									<svg class="mrp-date-pick__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+										stroke-linecap="round" stroke-linejoin="round" focusable="false">
+										<path d="M8 2v4"></path>
+										<path d="M16 2v4"></path>
+										<rect width="18" height="18" x="3" y="4" rx="2"></rect>
+										<path d="M3 10h18"></path>
+									</svg>
+									<span class="mrp-date-pick__label" data-mrp-date-label>Select Earth Date</span>
+								</div>
+								<input class="mrp-date-pick__input" type="date" name="earthDate"
+									min="{rover.landingDate}" max="{rover.maxDate}"
+									title=""
+									aria-haspopup="dialog"
+									aria-label="Select Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}"
+									data-mrp-date-input>
 							</div>
-							<input class="mrp-date-pick__input" type="date" name="earthDate"
-								min="{rover.landingDate}" max="{rover.maxDate}"
-								aria-haspopup="dialog"
-								aria-label="Earth date for {rover.name} between {rover.landingDate} and {rover.maxDate}"
-								data-mrp-date-input>
+							<button type="submit" class="mrp-date-pick__view" data-mrp-date-submit hidden disabled>
+								View Photo
+								<svg class="mrp-date-pick__view-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+									viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+									stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+									<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+									<circle cx="12" cy="13" r="3"></circle>
+								</svg>
+							</button>
 						</div>
 						<p class="mrp-date-pick__msg" data-mrp-date-msg hidden></p>
-						<button type="submit" class="mrp-btn mrp-btn--secondary mrp-btn--block mrp-date-pick__submit"
-							data-mrp-date-submit hidden disabled>
-							View photo
-						</button>
 					</form>
 					{/if}
 					<a class="mrp-btn mrp-btn--secondary mrp-btn--block" href="/rover/{rover.id}">Rover Details</a>
@@ -144,6 +152,12 @@
 					return;
 				}
 
+				/* Suppress native "Show date picker" hover chrome where browsers honor it. */
+				input.setAttribute('title', '');
+				input.addEventListener('mouseenter', function () {
+					input.setAttribute('title', '');
+				});
+
 				function clearMsg() {
 					if (!msg) {
 						return;
@@ -162,11 +176,13 @@
 
 				function syncUi() {
 					if (!input.value) {
-						label.textContent = 'Earth Date';
+						form.classList.remove('mrp-date-pick--selected');
+						label.textContent = 'Select Earth Date';
 						submit.hidden = true;
 						submit.disabled = true;
 						return;
 					}
+					form.classList.add('mrp-date-pick--selected');
 					label.textContent = input.value;
 					submit.hidden = false;
 					submit.disabled = false;
