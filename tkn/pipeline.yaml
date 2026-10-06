@@ -1,0 +1,101 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: mrp-build-deploy
+  labels:
+    app.kubernetes.io/part-of: mrp
+spec:
+  description: >-
+    Clone https://github.com/ecwpz91/mrp, build/push the container image with
+    Buildah, then apply k8s/ manifests and roll out the Deployment.
+  params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+      default: https://github.com/ecwpz91/mrp.git
+    - name: git-revision
+      type: string
+      description: Git revision (branch, tag, or commit SHA)
+      default: main
+    - name: image
+      type: string
+      description: Image reference to build and push
+      default: quay.io/ecwpz91/mrp:latest
+    - name: dockerfile
+      type: string
+      description: Path to the Dockerfile relative to the repo root
+      default: ./Dockerfile
+  workspaces:
+    - name: shared-workspace
+      description: Shared volume for source code between tasks
+    - name: dockerconfig
+      description: Registry credentials (expects config.json for Buildah)
+      optional: true
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: URL
+          value: $(params.git-url)
+        - name: REVISION
+          value: $(params.git-revision)
+        - name: DELETE_EXISTING
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+
+    - name: build-image
+      runAfter:
+        - fetch-repository
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: IMAGE
+          value: $(params.image)
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+        - name: CONTEXT
+          value: .
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: dockerconfig
+
+    - name: deploy
+      runAfter:
+        - build-image
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: openshift-client
+          - name: namespace
+            value: openshift-pipelines
+      params:
+        - name: SCRIPT
+          value: |
+            oc apply -f $(workspaces.manifest_dir.path)/k8s/
+            oc rollout restart deployment/mars-rover-photos
+            oc rollout status deployment/mars-rover-photos --timeout=300s
+      workspaces:
+        - name: manifest_dir
+          workspace: shared-workspace

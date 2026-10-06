@@ -1,0 +1,91 @@
+# GitHub push → PipelineRun for https://github.com/ecwpz91/mrp (main branch).
+# Requires OpenShift Pipelines (Tekton + Triggers) installed on the cluster.
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: mrp-git-push-binding
+  labels:
+    app.kubernetes.io/part-of: mrp
+spec:
+  params:
+    - name: git-url
+      value: $(body.repository.clone_url)
+    - name: git-revision
+      value: $(body.after)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: mrp-trigger-template
+  labels:
+    app.kubernetes.io/part-of: mrp
+spec:
+  params:
+    - name: git-url
+      description: Git repository clone URL from the webhook payload
+    - name: git-revision
+      description: Commit SHA to build (body.after)
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: mrp-build-deploy-
+        labels:
+          app.kubernetes.io/part-of: mrp
+          tekton.dev/pipeline: mrp-build-deploy
+      spec:
+        pipelineRef:
+          name: mrp-build-deploy
+        taskRunTemplate:
+          serviceAccountName: pipeline
+        params:
+          - name: git-url
+            value: $(tt.params.git-url)
+          - name: git-revision
+            value: $(tt.params.git-revision)
+          - name: image
+            value: quay.io/ecwpz91/mrp:latest
+        workspaces:
+          - name: shared-workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+          - name: dockerconfig
+            secret:
+              secretName: quayio-reg
+              items:
+                - key: .dockerconfigjson
+                  path: config.json
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: mrp-listener
+  labels:
+    app.kubernetes.io/part-of: mrp
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: github-push-main
+      interceptors:
+        - ref:
+            name: github
+            kind: ClusterInterceptor
+          params:
+            - name: eventTypes
+              value:
+                - push
+        - ref:
+            name: cel
+            kind: ClusterInterceptor
+          params:
+            - name: filter
+              value: "body.ref == 'refs/heads/main'"
+      bindings:
+        - ref: mrp-git-push-binding
+      template:
+        ref: mrp-trigger-template

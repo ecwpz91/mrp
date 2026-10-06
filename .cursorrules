@@ -12,7 +12,7 @@ Key context for features, copy, and documentation in this repository:
 - **Framework**: Java 17+ with Quarkus (JAX-RS + Qute)
 - **Frontend**: Qute templates (`src/main/resources/templates`), static assets under `META-INF/resources`, CSS (Shards UI)
 - **External Integration**: Mars Vista API v2 (`api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` and `X-API-Key` header via REST Client)
-- **Deployment & DevOps**: Kubernetes, OpenShift, Docker, and Jenkins CI/CD
+- **Deployment & DevOps**: Kubernetes, OpenShift, Docker, and Tekton (OpenShift Pipelines) CI/CD
 
 ## Coding & Architectural Conventions
 1. Keep HTTP endpoints cleanly mapped inside `com.redhat.mrp.web`.

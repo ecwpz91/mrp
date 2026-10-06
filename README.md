@@ -97,7 +97,8 @@ src/main/resources/
   META-INF/resources/            # Static HTML, CSS (Shards UI), images
   application.properties
 k8s/                             # Kubernetes manifests
-openshift/                       # OpenShift / Jenkins CI assets
+openshift/                       # OpenShift helpers (registry secrets, ConfigMap, BuildConfig)
+tkn/                             # Tekton / OpenShift Pipelines CI (build + deploy on push)
 ```
 
 Stack: Java 17+, Quarkus 3.40 LTS (REST, Qute, REST Client, SmallRye Health, Micrometer/Prometheus).
@@ -211,7 +212,7 @@ Open `https://<route-host>/` in a browser.
 
 #### 6. Optional: in-cluster image builds
 
-To build from this repo’s `Dockerfile` and push to Quay (requires Quay push credentials on the builder service account):
+To build from this repo’s `Dockerfile` and push to Quay without Tekton (requires Quay push credentials on the builder service account):
 
 ```bash
 oc apply -f openshift/buildcfg.yaml
@@ -219,15 +220,70 @@ oc secrets link builder quayio-reg --for=pull,mount
 oc start-build mars-rover-photos --from-dir=. --follow
 ```
 
-To wire the Jenkins pipeline BuildConfig (cluster must have OpenShift Pipelines / Jenkins integration as expected by `Jenkinsfile`):
-
-```bash
-oc apply -f openshift/pipeline.yaml
-```
+For continuous build-and-deploy on every commit to `main`, use the Tekton pipeline under [`tkn/`](tkn/) instead (see [CI](#ci)).
 
 ### CI
 
-`Jenkinsfile` drives an OpenShift binary build against BuildConfig `mars-rover-photos` (see `openshift/buildcfg.yaml` and `openshift/pipeline.yaml`).
+Tekton manifests in [`tkn/`](tkn/) replace the former Jenkins pipeline. On each push to `main` on [ecwpz91/mrp](https://github.com/ecwpz91/mrp), an EventListener starts Pipeline `mrp-build-deploy`, which:
+
+1. Clones the commit from GitHub (`git-clone`)
+2. Builds and pushes `quay.io/ecwpz91/mrp:latest` (`buildah`)
+3. Applies `k8s/` and rolls out Deployment `mars-rover-photos` (`openshift-client`)
+
+#### Prerequisites
+
+- OpenShift project with the app already deployed (steps 1–5 above)
+- [Red Hat OpenShift Pipelines](https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/) operator installed (provides Tekton + Triggers and cluster tasks such as `git-clone`, `buildah`, and `openshift-client`)
+- Quay pull/push secret `quayio-reg` in the project (step 2), with **push** credentials so Buildah can publish the image
+
+#### Install the pipeline
+
+```bash
+# from the repo root, in project mrp
+oc project mrp
+
+# pipeline SA needs edit rights to apply k8s/ and restart the Deployment
+oc apply -f tkn/rbac.yaml
+
+# allow the pipeline SA to use the Quay secret for image push
+oc secrets link pipeline quayio-reg --for=pull,mount
+
+oc apply -f tkn/pipeline.yaml
+oc apply -f tkn/triggers.yaml
+```
+
+Expose the EventListener so GitHub can reach it:
+
+```bash
+oc expose svc el-mrp-listener
+oc get route el-mrp-listener -o jsonpath='{.spec.host}{"\n"}'
+```
+
+#### Wire GitHub to deploy on every commit
+
+In the [ecwpz91/mrp](https://github.com/ecwpz91/mrp) repository: **Settings → Webhooks → Add webhook**.
+
+| Field | Value |
+| --- | --- |
+| Payload URL | `https://<el-mrp-listener-route-host>/` |
+| Content type | `application/json` |
+| Secret | (optional) leave empty unless you add a GitHub interceptor secret |
+| Events | Just the `push` event |
+
+The trigger filters to `refs/heads/main`, so only commits on `main` start a PipelineRun. After you push to `main`:
+
+```bash
+tkn pipelinerun list
+tkn pipelinerun logs -f
+oc get pods -l app=mars-rover-photos
+```
+
+#### Manual run (no webhook)
+
+```bash
+oc create -f tkn/pipelinerun.yaml
+tkn pipelinerun logs -f
+```
 
 ## License
 

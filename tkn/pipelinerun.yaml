@@ -1,0 +1,35 @@
+# Manual one-shot run of mrp-build-deploy (for testing without a webhook).
+# Prefer the EventListener in triggers.yaml for on-commit builds.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: mrp-build-deploy-
+  labels:
+    app.kubernetes.io/part-of: mrp
+spec:
+  pipelineRef:
+    name: mrp-build-deploy
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  params:
+    - name: git-url
+      value: https://github.com/ecwpz91/mrp.git
+    - name: git-revision
+      value: main
+    - name: image
+      value: quay.io/ecwpz91/mrp:latest
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: dockerconfig
+      secret:
+        secretName: quayio-reg
+        items:
+          - key: .dockerconfigjson
+            path: config.json
