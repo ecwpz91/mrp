@@ -90,6 +90,8 @@
           data-min-lon="{trek.minLon}"
           data-max-lat="{trek.maxLat}"
           data-max-lon="{trek.maxLon}"
+          data-fit-max-zoom="{trek.fitMaxZoom}"
+          data-fit-to-bounds="{trek.fitToBounds}"
           data-layer-title="{trek.layerTitle}"></div>
         <p class="trek-caption">Landing-site orbital mosaic (not the rover's exact position on {photo.earthDate} / sol {photo.sol}). {trek.layerTitle}</p>
         <p class="trek-caption">
@@ -122,31 +124,55 @@
       var minLon = parseFloat(el.getAttribute('data-min-lon'));
       var maxLat = parseFloat(el.getAttribute('data-max-lat'));
       var maxLon = parseFloat(el.getAttribute('data-max-lon'));
+      var fitMaxZoom = parseInt(el.getAttribute('data-fit-max-zoom'), 10);
+      if (isNaN(fitMaxZoom) || fitMaxZoom < 0) {
+        fitMaxZoom = 8;
+      }
+      var fitToBounds = el.getAttribute('data-fit-to-bounds') === 'true';
       var layerTitle = el.getAttribute('data-layer-title') || 'Mars Trek';
 
       var map = L.map(el, {
         crs: L.CRS.EPSG4326,
-        worldCopyJump: false
+        worldCopyJump: false,
+        maxZoom: 17
       });
 
-      L.tileLayer(tileUrl, {
+      var tileOpts = {
         attribution: 'NASA / JPL Mars Trek',
-        maxZoom: 12,
+        maxZoom: 17,
         minZoom: 0,
         tms: false,
         noWrap: true
-      }).addTo(map);
+      };
+      // Limit HiRISE tile requests to the mosaic footprint (avoids empty global fetches).
+      if (!fitToBounds) {
+        tileOpts.bounds = [[minLat, minLon], [maxLat, maxLon]];
+      }
+      L.tileLayer(tileUrl, tileOpts).addTo(map);
 
       var bounds = L.latLngBounds(
         L.latLng(minLat, minLon),
         L.latLng(maxLat, maxLon)
       );
-      map.fitBounds(bounds, { padding: [12, 12], maxZoom: 8 });
+      // Viking/Jezero: fitBounds. HiRISE: forced zoom (fitBounds leaves postage stamps).
+      function applyInitialView() {
+        if (fitToBounds) {
+          map.fitBounds(bounds, { padding: [12, 12], maxZoom: fitMaxZoom, animate: false });
+        } else {
+          map.setView([centerLat, centerLon], fitMaxZoom, { animate: false });
+        }
+      }
+      applyInitialView();
       L.marker([centerLat, centerLon]).addTo(map).bindPopup(layerTitle);
 
-      // Leaflet needs a invalidate after fluid layout / orientation changes
+      // Leaflet needs invalidateSize after fluid layout; re-apply view once sized
+      var didInitialFit = false;
       function resizeMap() {
-        map.invalidateSize();
+        map.invalidateSize({ animate: false });
+        if (!didInitialFit && el.clientWidth > 0 && el.clientHeight > 0) {
+          applyInitialView();
+          didInitialFit = true;
+        }
       }
       window.addEventListener('resize', resizeMap);
       if (typeof ResizeObserver !== 'undefined') {
