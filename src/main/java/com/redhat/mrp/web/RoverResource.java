@@ -4,6 +4,7 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,6 +37,11 @@ public class RoverResource {
 	/** Prefix match for Perseverance (v2 cameras filter rejects FRONT_HAZCAM_* names). */
 	private static final String PERSEVERANCE_FHAZ_PREFIX = "FRONT_HAZCAM";
 	private static final int MAX_PHOTO_ATTEMPTS = 10;
+	/**
+	 * Spirit's last hazcam (2010-02-13) is ~17 days before max_date (2010-03-02); a short
+	 * day-by-day walk misses it. One range query covers completed-mission gaps.
+	 */
+	private static final int ON_OR_BEFORE_LOOKBACK_DAYS = 60;
 	private static final Random RANDOM = new Random();
 
 	@Inject
@@ -78,8 +84,8 @@ public class RoverResource {
 	 * so refresh keeps the same image.
 	 * <ul>
 	 * <li>photoId — render that photo</li>
-	 * <li>earthDate only — hazcam from that day (walks back a few days if empty);
-	 * used for Recent/Last Photo from /rovers</li>
+	 * <li>earthDate only — hazcam from that day (or latest hazcam within
+	 * {@link #ON_OR_BEFORE_LOOKBACK_DAYS} if empty); used for Max/Recent from /rovers</li>
 	 * <li>landingDate + maxDate — random day in range; Random Photo from /rovers</li>
 	 * </ul>
 	 */
@@ -174,26 +180,56 @@ public class RoverResource {
 		return day.toString();
 	}
 
-	/** Prefer hazcam photos on earthDate; walk back up to {@link #MAX_PHOTO_ATTEMPTS} days. */
+	/**
+	 * Prefer hazcam photos on {@code earthDate}; if none, use the latest hazcam day within
+	 * {@link #ON_OR_BEFORE_LOOKBACK_DAYS} (clamped to landing). Used for Max/Recent and
+	 * calendar picks when the chosen day has no hazcam shots.
+	 */
 	private Photo pickPhotoOnOrBefore(String name, String earthDate) {
 		DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
 		LocalDate day = LocalDate.parse(earthDate, formatter);
 		String camera = cameraFilterFor(name);
 
-		for (int attempt = 0; attempt < MAX_PHOTO_ATTEMPTS; attempt++) {
-			LocalDate candidate = day.minusDays(attempt);
-			List<Photo> photos = marsVistaClient.listPhotosForDate(name, candidate.toString(), camera);
-			if (photos.isEmpty()) {
-				LOGGER.debugf("No %s photos for %s on %s; walking back", camera, name, candidate);
-				continue;
+		LocalDate from = day.minusDays(ON_OR_BEFORE_LOOKBACK_DAYS);
+		Rover rover = marsVistaClient.getRover(name);
+		if (rover != null && rover.getLandingDate() != null && !rover.getLandingDate().isBlank()) {
+			LocalDate landing = LocalDate.parse(rover.getLandingDate(), formatter);
+			if (from.isBefore(landing)) {
+				from = landing;
 			}
-			Photo photo = photos.get(RANDOM.nextInt(photos.size()));
-			LOGGER.debugf("On-or-before photo picked :: %s", photo);
-			return photo;
 		}
 
-		throw new IllegalArgumentException(
-				"No hazcam photos found on or shortly before " + earthDate + " for " + name + ".");
+		List<Photo> photos = marsVistaClient.listPhotosInRange(name, from.toString(), day.plusDays(1).toString(),
+				camera);
+		if (photos.isEmpty()) {
+			throw new IllegalArgumentException(
+					"No hazcam photos found on or shortly before " + earthDate + " for " + name + ".");
+		}
+
+		String latestDate = null;
+		for (Photo photo : photos) {
+			String photoDate = photo.getEarthDate();
+			if (photoDate == null || photoDate.isBlank()) {
+				continue;
+			}
+			if (latestDate == null || photoDate.compareTo(latestDate) > 0) {
+				latestDate = photoDate;
+			}
+		}
+		if (latestDate == null) {
+			throw new IllegalArgumentException(
+					"No hazcam photos found on or shortly before " + earthDate + " for " + name + ".");
+		}
+
+		List<Photo> onLatestDay = new ArrayList<>();
+		for (Photo photo : photos) {
+			if (latestDate.equals(photo.getEarthDate())) {
+				onLatestDay.add(photo);
+			}
+		}
+		Photo photo = onLatestDay.get(RANDOM.nextInt(onLatestDay.size()));
+		LOGGER.debugf("On-or-before photo picked :: %s (requested %s)", photo, earthDate);
+		return photo;
 	}
 
 	private static String cameraFilterFor(String roverName) {

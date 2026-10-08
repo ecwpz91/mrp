@@ -60,11 +60,20 @@ public class MarsVistaClient {
 	 */
 	public List<Photo> listPhotosForDate(String roverSlug, String earthDate, String cameraFilter) {
 		LocalDate day = LocalDate.parse(earthDate);
+		return listPhotosInRange(roverSlug, day.toString(), day.plusDays(1).toString(), cameraFilter);
+	}
+
+	/**
+	 * Photos in {@code [dateMin, dateMaxExclusive)}. Perseverance hazcam names are filtered
+	 * client-side because the v2 {@code cameras} query rejects {@code FRONT_HAZCAM_*} ids.
+	 */
+	public List<Photo> listPhotosInRange(String roverSlug, String dateMin, String dateMaxExclusive,
+			String cameraFilter) {
 		boolean filterClientSide = "perseverance".equalsIgnoreCase(roverSlug);
 		String cameras = (!filterClientSide && cameraFilter != null && !cameraFilter.isBlank()) ? cameraFilter : null;
 
-		JsonNode root = safeCall(() -> marsVistaApi.listPhotos(roverSlug, day.toString(), day.plusDays(1).toString(),
-				cameras, "rover,camera", DEFAULT_PER_PAGE));
+		JsonNode root = safeCall(() -> marsVistaApi.listPhotos(roverSlug, dateMin, dateMaxExclusive, cameras,
+				"rover,camera", DEFAULT_PER_PAGE));
 		List<Photo> photos = mapPhotoList(root);
 		if (filterClientSide && cameraFilter != null && !cameraFilter.isBlank()) {
 			List<Photo> filtered = new ArrayList<>();
