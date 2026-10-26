@@ -7,7 +7,7 @@ metadata:
 spec:
   description: >-
     Clone https://github.com/ecwpz91/mrp, build/push the container image with
-    Buildah, then apply k8s/ manifests and roll out the Deployment.
+    Buildah, then apply deploy/ with Kustomize and roll out the Deployment.
   params:
     - name: git-url
       type: string
@@ -93,7 +93,7 @@ spec:
       params:
         - name: SCRIPT
           value: |
-            oc apply -f $(workspaces.manifest_dir.path)/k8s/
+            oc apply -k $(workspaces.manifest_dir.path)/deploy
             oc rollout restart deployment/mars-rover-photos
             oc rollout status deployment/mars-rover-photos --timeout=300s
       workspaces:

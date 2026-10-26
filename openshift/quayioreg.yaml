@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: quayio-reg
-data:
-  .dockerconfigjson: encrypted-password-here
-type: kubernetes.io/dockerconfigjson
