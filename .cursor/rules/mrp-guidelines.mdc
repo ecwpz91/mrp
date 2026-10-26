@@ -1,0 +1,36 @@
+---
+description: Mars Rover Photos (MRP) project architecture, coding standards, and citizen-science context
+globs: **/*
+alwaysApply: true
+---
+
+# Mars Rover Photos (MRP) - Project Context & Guidelines
+
+## Project Purpose & Background
+Mars Rover Photos (MRP) is a Quarkus application designed to support volunteer-driven scientific analysis of high-resolution images from Mars' south polar region (taken by NASA's Mars Reconnaissance Orbiter).
+
+Key context for features, copy, and documentation in this repository:
+- **Volunteer Classification**: Volunteers review images to mark surface features including seasonal fans, blotches, and exotic terrain types like "spiders" and "Swiss cheese."
+- **AI/ML Training**: Human pattern recognition classifications are compared against AI model predictions to train, refine, and improve machine learning algorithms where AI models currently struggle.
+- **Scientific Impact**: The seasonal fans mapped by volunteers yield data on Martian wind speed and direction, aiding large-scale weather measurements and helping scientists understand surface processes, atmospheric conditions, and the planet's evolution.
+
+## Tech Stack & Architecture
+- **Framework**: Java 17+ with Quarkus 3.40+ (JAX-RS / Quarkus REST + Qute templating)
+- **Frontend**: Qute templates (`src/main/resources/templates/RoverResource/`), static assets under `src/main/resources/META-INF/resources`, CSS (Shards UI + `mrp.css`), Leaflet for Mars Trek orbital maps
+- **External Integrations**:
+  - Mars Vista API v2 (`https://api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` header `X-API-Key` via MicroProfile REST Client)
+  - NASA Image and Video Library (`https://images-api.nasa.gov`; public, no auth required)
+  - NASA Mars Trek WMTS tile endpoints (`https://trek.nasa.gov/tiles/...`; client-side Leaflet)
+- **Deployment & DevOps**: Kubernetes (`deploy/k8s`), OpenShift (`deploy/openshift`), Docker (`Dockerfile`), Tekton / OpenShift Pipelines (`deploy/tkn`)
+
+## Coding & Architectural Conventions
+1. **Endpoint Routing**: Keep JAX-RS / Qute controller endpoints cleanly mapped inside `com.redhat.mrp.web` (e.g., `RoverResource.java`).
+2. **Clients & Data Access**:
+   - Keep REST client declarations and adapters under `com.redhat.mrp.client` (e.g., `MarsVistaApi`, `MarsVistaClient`, `MarsVistaHeadersFactory`).
+   - Keep POJO models and view representations under `com.redhat.mrp.model`.
+3. **Citizen-Science Copy & UI**:
+   - Preserve an encouraging, scientific citizen-science tone focused on helping volunteers identify features (fans, blotches, spiders, Swiss cheese terrain) to assist AI training.
+   - Maintain responsive, accessible controls (44px min touch targets, WCAG compliance, mobile-safe date inputs).
+4. **Configuration & Secrets**:
+   - Never hardcode or commit API keys. Access keys via `@ConfigProperty(name = "api.key")` or environment variable `MARSVISTA_API_KEY`.
+   - Kubernetes/OpenShift deployments must inject configuration via ConfigMaps or Secrets mounted into `/etc/mrp/application.properties` using `QUARKUS_CONFIG_LOCATIONS`.
