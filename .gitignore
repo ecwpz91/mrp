@@ -1,4 +1,4 @@
-.workspace/
+.bench/
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -34,8 +34,6 @@ build/
 ### VS Code / Cursor ###
 /.vscode/
 .tern-project
-.cursor/
-!.cursorrules
 
 ### Local secrets & overrides ###
 .env
