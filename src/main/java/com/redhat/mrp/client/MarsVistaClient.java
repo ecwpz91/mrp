@@ -1,6 +1,7 @@
 package com.redhat.mrp.client;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -220,8 +221,8 @@ public class MarsVistaClient {
 			return null;
 		}
 		try {
-			return new URL(value);
-		} catch (MalformedURLException e) {
+			return URI.create(value).toURL();
+		} catch (IllegalArgumentException | MalformedURLException e) {
 			return null;
 		}
 	}
