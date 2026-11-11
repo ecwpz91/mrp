@@ -21,7 +21,7 @@ Key context for features, copy, and documentation in this repository:
   - Mars Vista API v2 (`https://api.marsvista.dev/api/v2`; requires `api.key` / `MARSVISTA_API_KEY` header `X-API-Key` via MicroProfile REST Client)
   - NASA Image and Video Library (`https://images-api.nasa.gov`; public, no auth required)
   - NASA Mars Trek WMTS tile endpoints (`https://trek.nasa.gov/tiles/...`; client-side Leaflet)
-- **Deployment & DevOps**: Kubernetes (`deploy/k8s`), OpenShift (`deploy/openshift`), Docker (`Dockerfile`), Tekton / OpenShift Pipelines (`deploy/tkn`)
+- **Deployment & DevOps**: Kubernetes/OpenShift Kustomize manifests (`.deploy/k8s`), Docker (`Dockerfile`), Tekton / OpenShift Pipelines (`.deploy/k8s/tkn`)
 
 ## Coding & Architectural Conventions
 1. **Endpoint Routing**: Keep JAX-RS / Qute controller endpoints cleanly mapped inside `com.redhat.mrp.web` (e.g., `RoverResource.java`).

@@ -98,7 +98,7 @@ src/main/resources/
   templates/RoverResource/       # Qute HTML views
   META-INF/resources/            # Static HTML, CSS (Shards UI), images
   application.properties
-deploy/                          # Kustomize app rollout (Deployment, Service, ConfigMap, Route)
+.deploy/k8s/                     # Kustomize app rollout (Deployment, Service, ConfigMap, Route)
   registry-pull-secret.yaml      # Optional one-shot registry pull secrets
   tkn/                           # Tekton / OpenShift Pipelines CI (build + deploy on push)
 ```
@@ -107,7 +107,7 @@ Stack: Java 17+, Quarkus 3.40 LTS (REST, Qute, REST Client, SmallRye Health, Mic
 
 ## Deploy
 
-Runtime objects are managed with [Kustomize](https://kustomize.io/) under [`deploy/`](deploy/). Edit `deploy/configmap.yaml` and set a real `api.key` before applying (do not commit it). Prefer a Secret for production. The Deployment mounts ConfigMap `mrp-app-config` at `/etc/mrp` and sets `QUARKUS_CONFIG_LOCATIONS` so Quarkus loads that `application.properties`.
+Runtime objects are managed with [Kustomize](https://kustomize.io/) under [`.deploy/k8s/`](.deploy/k8s/). Edit `.deploy/k8s/configmap.yaml` and set a real `api.key` before applying (do not commit it). Prefer a Secret for production. The Deployment mounts ConfigMap `mrp-app-config` at `/etc/mrp` and sets `QUARKUS_CONFIG_LOCATIONS` so Quarkus loads that `application.properties`.
 
 Image builds are handled by the Tekton pipeline (Buildah), not an OpenShift BuildConfig.
 
@@ -115,7 +115,7 @@ Image builds are handled by the Tekton pipeline (Buildah), not an OpenShift Buil
 
 Prerequisites: [`oc`](https://docs.openshift.com/container-platform/latest/cli_reference/openshift_cli/getting-started-cli.html) logged into a cluster (`oc login …`), and this repo cloned locally.
 
-The published image is `quay.io/ecwpz91/mrp:latest`. Roll out with `oc apply -k deploy/` (Deployment, Service, ConfigMap, Route).
+The published image is `quay.io/ecwpz91/mrp:latest`. Roll out with `oc apply -k .deploy/k8s` (Deployment, Service, ConfigMap, Route).
 
 #### 1. Create the project
 
@@ -140,10 +140,10 @@ oc create secret docker-registry quayio-reg \
   --docker-email=<email>
 ```
 
-**Option B — apply the placeholder secret:** edit `deploy/registry-pull-secret.yaml` and replace `encrypted-password-here` with a base64-encoded Docker config JSON, then:
+**Option B — apply the placeholder secret:** edit `.deploy/k8s/registry-pull-secret.yaml` and replace `encrypted-password-here` with a base64-encoded Docker config JSON, then:
 
 ```bash
-oc apply -f deploy/registry-pull-secret.yaml
+oc apply -f .deploy/k8s/registry-pull-secret.yaml
 ```
 
 Link the secret to the default service account so Deployments can pull the image:
@@ -173,10 +173,10 @@ oc describe imagestream mrp
 
 #### 4. Deploy the app (`oc apply -k`)
 
-Edit `deploy/configmap.yaml` and set a real `api.key` (do not commit it), then:
+Edit `.deploy/k8s/configmap.yaml` and set a real `api.key` (do not commit it), then:
 
 ```bash
-oc apply -k deploy/
+oc apply -k .deploy/k8s
 ```
 
 This applies the ConfigMap, Deployment, Service, and Route. After pods are running:
@@ -188,15 +188,15 @@ oc get route mars-rover-photos -o jsonpath='{.spec.host}{"\n"}'
 
 Open `https://<route-host>/` in a browser.
 
-For continuous build-and-deploy on every commit to `main`, use the Tekton pipeline under [`deploy/tkn/`](deploy/tkn/) (see [CI](#ci)).
+For continuous build-and-deploy on every commit to `main`, use the Tekton pipeline under [`.deploy/k8s/tkn/`](.deploy/k8s/tkn/) (see [CI](#ci)).
 
 ### CI
 
-Tekton manifests in [`deploy/tkn/`](deploy/tkn/) replace the former Jenkins pipeline. On each push to `main` on [ecwpz91/mrp](https://github.com/ecwpz91/mrp), an EventListener starts Pipeline `mrp-build-deploy`, which:
+Tekton manifests in [`.deploy/k8s/tkn/`](.deploy/k8s/tkn/) replace the former Jenkins pipeline. On each push to `main` on [ecwpz91/mrp](https://github.com/ecwpz91/mrp), an EventListener starts Pipeline `mrp-build-deploy`, which:
 
 1. Clones the commit from GitHub (`git-clone`)
 2. Builds and pushes `quay.io/ecwpz91/mrp:latest` (`buildah`)
-3. Applies `deploy/` with Kustomize and rolls out Deployment `mars-rover-photos` (`openshift-client`)
+3. Applies `.deploy/k8s` with Kustomize and rolls out Deployment `mars-rover-photos` (`openshift-client`)
 
 #### Prerequisites
 
@@ -210,14 +210,14 @@ Tekton manifests in [`deploy/tkn/`](deploy/tkn/) replace the former Jenkins pipe
 # from the repo root, in project mrp
 oc project mrp
 
-# pipeline SA needs edit rights to apply deploy/ and restart the Deployment
-oc apply -f deploy/tkn/rbac.yaml
+# pipeline SA needs edit rights to apply .deploy/k8s and restart the Deployment
+oc apply -f .deploy/k8s/tkn/rbac.yaml
 
 # allow the pipeline SA to use the Quay secret for image push
 oc secrets link pipeline quayio-reg --for=pull,mount
 
-oc apply -f deploy/tkn/pipeline.yaml
-oc apply -f deploy/tkn/triggers.yaml
+oc apply -f .deploy/k8s/tkn/pipeline.yaml
+oc apply -f .deploy/k8s/tkn/triggers.yaml
 ```
 
 Expose the EventListener so GitHub can reach it:
@@ -249,7 +249,7 @@ oc get pods -l app=mars-rover-photos
 #### Manual run (no webhook)
 
 ```bash
-oc create -f deploy/tkn/pipelinerun.yaml
+oc create -f .deploy/k8s/tkn/pipelinerun.yaml
 tkn pipelinerun logs -f
 ```
 

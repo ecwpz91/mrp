@@ -1,5 +1,5 @@
 # Grants the OpenShift Pipelines "pipeline" service account permission to
-# apply deploy/ with Kustomize and restart the Deployment in this project.
+# apply .deploy/k8s with Kustomize and restart the Deployment in this project.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
