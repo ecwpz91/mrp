@@ -75,7 +75,7 @@ java -jar target/quarkus-app/quarkus-run.jar
 ### Docker
 
 ```bash
-docker build -t mrp:local .
+docker build -f Containerfile -t mrp:local .
 docker run --rm -p 8080:8080 -e MARSVISTA_API_KEY=your-marsvista-api-key mrp:local
 ```
 

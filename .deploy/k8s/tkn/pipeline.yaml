@@ -23,8 +23,8 @@ spec:
       default: quay.io/ecwpz91/mrp:latest
     - name: dockerfile
       type: string
-      description: Path to the Dockerfile relative to the repo root
-      default: ./Dockerfile
+      description: Path to the Containerfile relative to the repo root
+      default: ./Containerfile
   workspaces:
     - name: shared-workspace
       description: Shared volume for source code between tasks
