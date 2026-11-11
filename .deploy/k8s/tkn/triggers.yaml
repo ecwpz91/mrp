@@ -56,7 +56,7 @@ spec:
                     storage: 1Gi
           - name: dockerconfig
             secret:
-              secretName: quayio-reg
+              secretName: quayio
               items:
                 - key: .dockerconfigjson
                   path: config.json

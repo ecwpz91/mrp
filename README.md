@@ -155,7 +155,7 @@ If the Quay repository is private, create a pull secret so the project can pull 
 **Option A — interactive (recommended):**
 
 ```bash
-oc create secret docker-registry quayio-reg \
+oc create secret docker-registry quayio \
   --docker-server=quay.io \
   --docker-username=<quay-username> \
   --docker-password=<quay-password-or-robot-token> \
@@ -171,7 +171,7 @@ oc apply -f .deploy/k8s/registry-pull-secret.yaml
 Link the secret to the default service account so Deployments can pull the image:
 
 ```bash
-oc secrets link default quayio-reg --for=pull
+oc secrets link default quayio --for=pull
 ```
 
 (The `docker-hub` secret in that file is optional and only needed if a build or base image pull requires Docker Hub credentials.)
@@ -224,7 +224,7 @@ Tekton manifests in [`.deploy/k8s/tkn/`](.deploy/k8s/tkn/) replace the former Je
 
 - OpenShift project with the app already deployed (steps 1–4 above)
 - [Red Hat OpenShift Pipelines](https://docs.redhat.com/en/documentation/red_hat_openshift_pipelines/) operator installed (provides Tekton + Triggers and cluster tasks such as `git-clone`, `buildah`, and `openshift-client`)
-- Quay pull/push secret `quayio-reg` in the project (step 2), with **push** credentials so Buildah can publish the image
+- Quay pull/push secret `quayio` in the project (step 2), with **push** credentials so Buildah can publish the image
 
 #### Install the pipeline
 
@@ -236,7 +236,7 @@ oc project mrp
 oc apply -f .deploy/k8s/tkn/rbac.yaml
 
 # allow the pipeline SA to use the Quay secret for image push
-oc secrets link pipeline quayio-reg --for=pull,mount
+oc secrets link pipeline quayio --for=pull,mount
 
 oc apply -f .deploy/k8s/tkn/pipeline.yaml
 oc apply -f .deploy/k8s/tkn/triggers.yaml
