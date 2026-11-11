@@ -72,14 +72,36 @@ java -jar target/quarkus-app/quarkus-run.jar
 ./mvnw test
 ```
 
-### Docker
+### Podman
+
+Build and run locally:
 
 ```bash
-docker build -f Containerfile -t mrp:local .
-docker run --rm -p 8080:8080 -e MARSVISTA_API_KEY=your-marsvista-api-key mrp:local
+podman build -f Containerfile -t mrp:local .
+podman run --rm -p 8080:8080 -e MARSVISTA_API_KEY=your-marsvista-api-key mrp:local
 ```
 
 Prefer passing `MARSVISTA_API_KEY` at runtime so secrets stay out of image layers.
+
+#### Build and push to Quay
+
+Published image: `quay.io/ecwpz91/mrp:latest`. Create the repository (or have write access) on [quay.io](https://quay.io) first.
+
+```bash
+# 1. Log in (password, or a Quay robot account token)
+podman login quay.io
+
+# 2. Build and tag for Quay
+podman build -f Containerfile -t quay.io/<org>/mrp:latest .
+
+# Optional: also tag a version or git SHA
+# podman tag quay.io/ecwpz91/mrp:latest quay.io/ecwpz91/mrp:1.0.0
+
+# 3. Push
+podman push quay.io/<org>/mrp:latest
+```
+
+Verify the tag appears under the Quay repository before deploying or importing into OpenShift.
 
 ### Native image (optional)
 
